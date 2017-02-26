@@ -30,12 +30,15 @@ class Repository(object):
             args.append("--merges")
         return self.__call_git(*args).split()
 
+    def message(self, commit_hash):
+        return self.__call_git("show", commit_hash, "--pretty=format:%s")
+
     def tags(self, pattern=r".*"):
         return [tag for tag in self.__call_git("tag").split()
                 if re.search(pattern, tag)]
 
-    def message(self, commit_hash):
-        return self.__call_git("show", commit_hash, "--pretty=format:%s")
+    def update(self):
+        return self.__call_git("pull")
 
     @staticmethod
     def ticket(message):
@@ -77,6 +80,7 @@ def generate_changelog(repositories):
         if DEBUG:
             print(repository)
         r = Repository(repository)
+        r.update()
         tags = sorted(r.tags("w\.\d{4}"), reverse=True)
         for newtag, oldtag in zip(tags, tags[1:]):
             merges = (set(r.commits(newtag, merges_only=True)) -
