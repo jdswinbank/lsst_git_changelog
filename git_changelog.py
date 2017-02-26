@@ -60,7 +60,7 @@ def get_ticket_summary(ticket):
 def print_tag(tagname, tickets):
     print("<h2>New in {}</h2>".format(tagname))
     print("<ul>")
-    for ticket in sorted(tickets):
+    for ticket in sorted(tickets, key=lambda x: int(x[3:])):  # Numeric sort
         summary = get_ticket_summary(ticket)
         pkgs = ", ".join(sorted(tickets[ticket]))
         link_text = (u"<li><a href=https://jira.lsstcorp.org/browse/"
