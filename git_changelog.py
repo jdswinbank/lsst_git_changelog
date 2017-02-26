@@ -67,11 +67,14 @@ def format_output(changelog):
         print("<ul>")
         for ticket in sorted(changelog[tag]):
             summary = get_ticket_summary(ticket)
-            print(u"<li><a href=https://jira.lsstcorp.org/browse/{ticket}>{ticket}</a>: {summary} [{pkgs}]</li>".format(ticket=ticket, summary=summary, pkgs=", ".join(changelog[tag][ticket])).encode('utf-8'))
+            pkgs = ", ".join(changelog[tag][ticket])
+            link_text = (u"<li><a href=https://jira.lsstcorp.org/browse/"
+                         u"{ticket}>{ticket}</a>: {summary} [{pkgs}]</li>")
+            print(link_text.format(ticket=ticket, summary=summary, pkgs=pkgs)
+                           .encode("utf-8"))
         print("</ul>")
     print("</body>")
     print("</html>")
-
 
 def generate_changelog(repositories):
     # Dict of tag -> ticket -> affected packages
