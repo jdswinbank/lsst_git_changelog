@@ -1,5 +1,6 @@
 from __future__ import print_function
 from collections import defaultdict
+import datetime
 import glob
 import json
 import os
@@ -81,6 +82,8 @@ def format_output(changelog):
     for tag in sorted(changelog, reverse=True):
         print_tag(tag, changelog[tag])
 
+    gen_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M +00:00")
+    print("<p>Generated {}.</p>".format(gen_date))
     print("</body>")
     print("</html>")
 
