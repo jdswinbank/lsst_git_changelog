@@ -56,23 +56,31 @@ def get_ticket_summary(ticket):
     j = json.load(urlopen(url))
     return j['fields']['summary']
 
+def print_tag(tagname, tickets):
+    print("<h2>New in {}</h2>".format(tagname))
+    print("<ul>")
+    for ticket in sorted(tickets):
+        summary = get_ticket_summary(ticket)
+        pkgs = ", ".join(sorted(tickets[ticket]))
+        link_text = (u"<li><a href=https://jira.lsstcorp.org/browse/"
+                     u"{ticket}>{ticket}</a>: {summary} [{pkgs}]</li>")
+        print(link_text.format(ticket=ticket, summary=summary, pkgs=pkgs)
+                       .encode("utf-8"))
+    print("</ul>")
+
 def format_output(changelog):
     # Ew, needs a proper templating engine
     print("<html>")
     print("<body>")
     print("<h1>LSST DM Weekly Changelog</h1>")
 
+    # Always do master first
+    print_tag("master", changelog.pop("master"))
+
+    # Then the other tags in order
     for tag in sorted(changelog, reverse=True):
-        print("<h2>New in {}</h2>".format(tag))
-        print("<ul>")
-        for ticket in sorted(changelog[tag]):
-            summary = get_ticket_summary(ticket)
-            pkgs = ", ".join(sorted(changelog[tag][ticket]))
-            link_text = (u"<li><a href=https://jira.lsstcorp.org/browse/"
-                         u"{ticket}>{ticket}</a>: {summary} [{pkgs}]</li>")
-            print(link_text.format(ticket=ticket, summary=summary, pkgs=pkgs)
-                           .encode("utf-8"))
-        print("</ul>")
+        print_tag(tag, changelog[tag])
+
     print("</body>")
     print("</html>")
 
@@ -84,7 +92,12 @@ def generate_changelog(repositories):
             print(repository)
         r = Repository(repository)
         r.update()
+
+        # Extract all tags which look like weeklies
         tags = sorted(r.tags("w\.\d{4}"), reverse=True)
+        # Also include tickets which aren't yet in a weekly
+        tags.insert(0, "master")
+
         for newtag, oldtag in zip(tags, tags[1:]):
             merges = (set(r.commits(newtag, merges_only=True)) -
                       set(r.commits(oldtag, merges_only=True)))
