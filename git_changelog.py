@@ -1,13 +1,16 @@
 from __future__ import print_function
 from collections import defaultdict
 import glob
+import json
 import os
 import re
 import subprocess
+from urllib2 import urlopen
 
 DEBUG = False
 GIT_EXEC = "/usr/bin/git"
 REPOSITORIES = glob.glob("/ssd/swinbank/src/*")  # Everything in w_2017_8
+JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
 
 class Repository(object):
     def __init__(self, path):
@@ -43,6 +46,13 @@ class Repository(object):
                 print(message)
 
 
+def get_ticket_summary(ticket):
+    url = JIRA_API_URL + "/issue/" + ticket + "?fields=summary"
+    if DEBUG:
+        print(url)
+    j = json.load(urlopen(url))
+    return j['fields']['summary']
+
 def format_output(changelog):
     # Ew, needs a proper templating engine
     print("<html>")
@@ -53,7 +63,8 @@ def format_output(changelog):
         print("<h2>New in {}</h2>".format(tag))
         print("<ul>")
         for ticket in changelog[tag]:
-            print("<li><a href=https://jira.lsstcorp.org/browse/{ticket}>{ticket}</a> [{pkgs}]</li>".format(ticket=ticket, pkgs=", ".join(changelog[tag][ticket])))
+            summary = get_ticket_summary(ticket)
+            print(u"<li><a href=https://jira.lsstcorp.org/browse/{ticket}>{ticket}</a>: {summary} [{pkgs}]</li>".format(ticket=ticket, summary=summary, pkgs=", ".join(changelog[tag][ticket])).encode('utf-8'))
         print("</ul>")
     print("</body>")
     print("</html>")
@@ -72,7 +83,10 @@ def generate_changelog(repositories):
                       set(r.commits(oldtag, merges_only=True)))
 
             for sha in merges:
-                changelog[newtag][r.ticket(r.message(sha))].add(os.path.basename(repository))
+                ticket = r.ticket(r.message(sha))
+                if ticket:
+                    changelog[newtag][ticket].add(os.path.basename(repository))
+    return changelog
 
 
 if __name__ == "__main__":
