@@ -60,7 +60,7 @@ def format_output(changelog):
     # Ew, needs a proper templating engine
     print("<html>")
     print("<body>")
-    print("<h1>LSST Changelog</h1>")
+    print("<h1>LSST DM Weekly Changelog</h1>")
 
     for tag in sorted(changelog, reverse=True):
         print("<h2>New in {}</h2>".format(tag))
