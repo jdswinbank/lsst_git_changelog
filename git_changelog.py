@@ -67,7 +67,7 @@ def format_output(changelog):
         print("<ul>")
         for ticket in sorted(changelog[tag]):
             summary = get_ticket_summary(ticket)
-            pkgs = ", ".join(changelog[tag][ticket])
+            pkgs = ", ".join(sorted(changelog[tag][ticket]))
             link_text = (u"<li><a href=https://jira.lsstcorp.org/browse/"
                          u"{ticket}>{ticket}</a>: {summary} [{pkgs}]</li>")
             print(link_text.format(ticket=ticket, summary=summary, pkgs=pkgs)
