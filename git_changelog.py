@@ -65,7 +65,7 @@ def format_output(changelog):
     for tag in sorted(changelog, reverse=True):
         print("<h2>New in {}</h2>".format(tag))
         print("<ul>")
-        for ticket in changelog[tag]:
+        for ticket in sorted(changelog[tag]):
             summary = get_ticket_summary(ticket)
             print(u"<li><a href=https://jira.lsstcorp.org/browse/{ticket}>{ticket}</a>: {summary} [{pkgs}]</li>".format(ticket=ticket, summary=summary, pkgs=", ".join(changelog[tag][ticket])).encode('utf-8'))
         print("</ul>")
