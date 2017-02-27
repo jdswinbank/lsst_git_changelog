@@ -87,6 +87,7 @@ def print_tag(tagname, tickets):
 def format_output(changelog):
     # Ew, needs a proper templating engine
     print("<html>")
+    print("<head><title>LSST DM Weekly Changelog</title></head>")
     print("<body>")
     print("<h1>LSST DM Weekly Changelog</h1>")
 
