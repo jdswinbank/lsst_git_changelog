@@ -84,7 +84,7 @@ def print_tag(tagname, tickets):
                        .encode("utf-8"))
     print("</ul>")
 
-def format_output(changelog):
+def format_output(changelog, repositories):
     # Ew, needs a proper templating engine
     print("<html>")
     print("<head><title>LSST DM Weekly Changelog</title></head>")
@@ -99,7 +99,8 @@ def format_output(changelog):
         print_tag(tag, changelog[tag])
 
     gen_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M +00:00")
-    print("<p>Generated {}.</p>".format(gen_date))
+    repos = ", ".join(os.path.basename(r) for r in repositories)
+    print("<p>Generated at {} by considering {}.</p>".format(gen_date, repos))
     print("</body>")
     print("</html>")
 
@@ -130,4 +131,4 @@ def generate_changelog(repositories):
 
 if __name__ == "__main__":
     changelog = generate_changelog(REPOSITORIES)
-    format_output(changelog)
+    format_output(changelog, REPOSITORIES)
