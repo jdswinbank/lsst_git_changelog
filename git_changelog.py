@@ -17,8 +17,12 @@ except ModuleNotFoundError:
 
 DEBUG = False
 GIT_EXEC = "/usr/bin/git"
-REPOSITORIES = glob.glob("/ssd/swinbank/src/*")  # Everything in w_2017_8
 JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
+
+# Populated by looking at https://sw.lsstcorp.org/eupspkg/tags/w_2017_8.list,
+# excluding ndarray and fftw since they don't appear to be receiving regular
+# weekly tags (for reasons known, presumably, to SQuaRE).
+REPOSITORIES = glob.glob("/ssd/swinbank/src/*")
 
 class Repository(object):
     def __init__(self, path):
