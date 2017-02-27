@@ -97,8 +97,10 @@ def format_output(changelog, repositories):
     print("<body>")
     print("<h1>LSST DM Weekly Changelog</h1>")
 
-    # Always do master first
-    print_tag("master", changelog.pop("master"))
+    # Always do master first if it exists
+    # (It won't if there are no changes since the most recent weekly)
+    if "master" in changelog:
+        print_tag("master", changelog.pop("master", None))
 
     # Then the other tags in order
     for tag in sorted(changelog, reverse=True):
