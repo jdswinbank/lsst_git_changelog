@@ -8,6 +8,13 @@ import re
 import subprocess
 from urllib2 import urlopen
 
+try:
+    # Python 2
+    import anydbm as dbm
+except ModuleNotFoundError:
+    # Python 3
+    import dbm
+
 DEBUG = False
 GIT_EXEC = "/usr/bin/git"
 REPOSITORIES = glob.glob("/ssd/swinbank/src/*")  # Everything in w_2017_8
@@ -51,11 +58,19 @@ class Repository(object):
 
 
 def get_ticket_summary(ticket):
-    url = JIRA_API_URL + "/issue/" + ticket + "?fields=summary"
-    if DEBUG:
-        print(url)
-    j = json.load(urlopen(url))
-    return j['fields']['summary']
+    # Context manager in Py3, but not 2, apparently
+    db = dbm.open("ticket.cache", "c")
+    try:
+        if ticket not in db:
+            url = JIRA_API_URL + "/issue/" + ticket + "?fields=summary"
+            if DEBUG:
+                print(url)
+            db[ticket] = json.load(urlopen(url))['fields']['summary'].encode("utf-8")
+        # json gives us a unicode string, which we need to encode for storing
+        # in the database, then decode again when we load it.
+        return db[ticket].decode("utf-8")
+    finally:
+        db.close()
 
 def print_tag(tagname, tickets):
     print("<h2>New in {}</h2>".format(tagname))
