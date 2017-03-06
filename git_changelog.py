@@ -78,6 +78,17 @@ def get_ticket_summary(ticket):
     finally:
         db.close()
 
+def tag_key(tagname):
+    """
+    Convert a tagname ("w.YYYY.NN" or "w.YYYY.N") into a key for sorting.
+
+    "w.2017.1"  -> 201701
+    "w.2017.01" -> 201701
+    "w.2017.10" -> 201710
+    etc.
+    """
+    return int(tagname.split(".")[1]) * 100 + int(tagname.split(".")[2])
+
 def print_tag(tagname, tickets):
     print("<h2>New in {}</h2>".format(tagname))
     print("<ul>")
@@ -103,7 +114,7 @@ def format_output(changelog, repositories):
         print_tag("master", changelog.pop("master", None))
 
     # Then the other tags in order
-    for tag in sorted(changelog, reverse=True):
+    for tag in sorted(changelog, reverse=True, key=tag_key):
         print_tag(tag, changelog[tag])
 
     gen_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M +00:00")
@@ -122,7 +133,7 @@ def generate_changelog(repositories):
         r.update()
 
         # Extract all tags which look like weeklies
-        tags = sorted(r.tags("w\.\d{4}"), reverse=True)
+        tags = sorted(r.tags("w\.\d{4}"), reverse=True, key=tag_key)
         # Also include tickets which aren't yet in a weekly
         tags.insert(0, "master")
 
