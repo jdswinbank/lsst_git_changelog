@@ -17,7 +17,7 @@ except ModuleNotFoundError:
 
 DEBUG = False
 GIT_EXEC = "/usr/bin/git"
-GIT_LFS_EXEC = "/ssd/lsstsw/stack/Linux64/git_lfs/2.0.0/bin/git-lfs"
+GIT_LFS_EXEC = "/ssd/lsstsw/stack3_20171021/stack/miniconda3-4.3.21-10a4fa6/Linux64/git_lfs/2.3.4/bin/git-lfs"
 JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
 
 # Populated by looking at https://sw.lsstcorp.org/eupspkg/tags/w_2017_8.list,
@@ -59,6 +59,15 @@ class Repository(object):
 
     def update(self):
         return self.__call_git("pull")
+
+    def branch_name(self):
+        branches = [br.strip("* ") for br in
+                    self.__call_git("branch").split('\n')
+                    if br]
+        if "lsst-dev" in branches:
+            return "lsst-dev"
+        else:
+            return "master"
 
     @staticmethod
     def ticket(message):
@@ -143,7 +152,7 @@ def generate_changelog(repositories):
         # Extract all tags which look like weeklies
         tags = sorted(r.tags("w\.\d{4}"), reverse=True, key=tag_key)
         # Also include tickets which aren't yet in a weekly
-        tags.insert(0, "master")
+        tags.insert(0, r.branch_name())
 
         for newtag, oldtag in zip(tags, tags[1:]):
             merges = (set(r.commits(newtag, merges_only=True)) -
@@ -152,7 +161,10 @@ def generate_changelog(repositories):
             for sha in merges:
                 ticket = r.ticket(r.message(sha))
                 if ticket:
-                    changelog[newtag][ticket].add(os.path.basename(repository))
+                    if newtag == r.branch_name():
+                        changelog["master"][ticket].add(os.path.basename(repository))
+                    else:
+                        changelog[newtag][ticket].add(os.path.basename(repository))
     return changelog
 
 
