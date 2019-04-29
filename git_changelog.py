@@ -6,7 +6,7 @@ import json
 import os
 import re
 import subprocess
-from urllib2 import urlopen
+from urllib2 import urlopen, HTTPError
 
 try:
     # Python 2
@@ -92,6 +92,8 @@ def get_ticket_summary(ticket):
         # json gives us a unicode string, which we need to encode for storing
         # in the database, then decode again when we load it.
         return db[ticket].decode("utf-8")
+    except HTTPError:
+            return ("Ticket description not available")
     finally:
         db.close()
 
@@ -135,7 +137,7 @@ def format_output(changelog, repositories):
         print_tag(tag, changelog[tag])
 
     gen_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M +00:00")
-    repos = ", ".join(os.path.basename(r) for r in repositories)
+    repos = ", ".join(os.path.basename(r) for r in sorted(repositories))
     print("<p>Generated at {} by considering {}.</p>".format(gen_date, repos))
     print("</body>")
     print("</html>")
@@ -150,7 +152,7 @@ def generate_changelog(repositories):
         r.update()
 
         # Extract all tags which look like weeklies
-        tags = sorted(r.tags("w\.\d{4}"), reverse=True, key=tag_key)
+        tags = sorted(r.tags("^w\.\d{4}\.\d?\d$"), reverse=True, key=tag_key)
         # Also include tickets which aren't yet in a weekly
         tags.insert(0, r.branch_name())
 
