@@ -17,7 +17,7 @@ except ModuleNotFoundError:
 
 DEBUG = False
 GIT_EXEC = "/usr/bin/git"
-GIT_LFS_EXEC = "/ssd/lsstsw/stack3_20171021/stack/miniconda3-4.3.21-10a4fa6/Linux64/git_lfs/2.3.4/bin/git-lfs"
+GIT_LFS_EXEC = "/software/lsstsw/stack/stack/current/Linux64/git_lfs/2.8.0/bin/git-lfs"
 JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
 
 # Populated by looking at https://sw.lsstcorp.org/eupspkg/tags/w_2017_8.list,
