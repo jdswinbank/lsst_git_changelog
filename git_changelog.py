@@ -116,7 +116,7 @@ def print_tag(tagname, tickets):
         pkgs = ", ".join(sorted(tickets[ticket]))
         link_text = (u"<li><a href=https://jira.lsstcorp.org/browse/"
                      u"{ticket}>{ticket}</a>: {summary} [{pkgs}]</li>")
-        print(link_text.format(ticket=ticket, summary=summary, pkgs=pkgs)
+        print(link_text.format(ticket=ticket.upper(), summary=summary, pkgs=pkgs)
                        .encode("utf-8"))
     print("</ul>")
 
