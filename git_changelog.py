@@ -8,10 +8,15 @@ import json
 import os
 import re
 import subprocess
+import yaml
+
+from typing import Dict, Set
 
 DEBUG = False
 GIT_EXEC = "/usr/bin/git"
 JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
+EUPS_PKGROOT = "https://eups.lsst.codes/stack/src/"
+REPOS_YAML = "https://raw.githubusercontent.com/lsst/repos/master/etc/repos.yaml"
 
 # Populated by looking at https://sw.lsstcorp.org/eupspkg/tags/w_2017_8.list,
 # excluding ndarray and fftw since they don't appear to be receiving regular
@@ -172,6 +177,28 @@ def generate_changelog(repositories):
                         changelog[newtag][ticket].add(os.path.basename(r.path))
     return changelog
 
+def get_packages_in_w_latest(pkgroot: str = EUPS_PKGROOT) -> Set[str]:
+    u = urlopen(pkgroot + "/tags" + "/w_latest.list")
+    products = set()
+    for line in u.read().decode("utf-8").strip().split("\n"):
+        if line.startswith("EUPS distribution "):
+            continue
+        if line.strip()[0] == "#":
+            continue
+        else:
+            products.add(line.split()[0])
+    return products
+
+def get_urls_for_packages(packages: Set[str], repos_yaml: str = REPOS_YAML) -> Dict[str, Dict[str, str]]:
+    pkgs = {}
+    with urlopen(repos_yaml) as u:
+        y = yaml.safe_load(u)
+        for pkg in packages:
+            if isinstance(y[pkg], str):  # Must be a URL
+                pkgs[pkg] = {'url': y[pkg]}
+            else:
+                pkgs[pkg] = y[pkg]
+    return pkgs
 
 if __name__ == "__main__":
     target_dir = os.path.expanduser('~/repos')
@@ -180,3 +207,4 @@ if __name__ == "__main__":
     changelog = generate_changelog(repos)
     format_output(changelog, repos)
 
+#    pkgs = get_urls_for_packages(get_packages_in_w_latest())
