@@ -30,7 +30,7 @@ def call_git(*args, cwd):
         print(to_exec)
         print(env['PATH'])
         print(cwd)
-    return subprocess.check_output(to_exec, cwd=cwd, env=env)
+    return subprocess.check_output(to_exec, cwd=cwd, env=env).decode('utf-8')
 
 
 class Repository(object):
