@@ -11,7 +11,17 @@ jobs:
             - uses: actions/setup-python@v2
               with:
                 python-version: 3.8
-            - run: ls -lart /repos || echo "no repos"
+            - name: Get Date
+              id: get-date
+              run: |
+                echo "::set-output name=date::$(/bin/date -u "+%s")"
+              shell: bash
+            - uses: actions/cache@v2
+              with:
+                path: ~/repos
+                key: ${{ runner.os }}-repos-${{ steps.get-date.outputs.date }}
+                restore-keys: ${{ runner.os }}-repos-
+            - run: ls -lart ~/repos || echo "no repos"
             - run: python git_changelog.py
             - run: pwd
-            - run: ls -lart /repos
+            - run: ls -lart ~/repos
