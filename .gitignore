@@ -1,2 +1,3 @@
-ticket.cache
 *swp
+__pycache__
+ticket.cache
