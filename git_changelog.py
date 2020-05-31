@@ -18,21 +18,27 @@ JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
 # weekly tags (for reasons known, presumably, to SQuaRE).
 REPOSITORIES = glob.glob("/ssd/swinbank/src/*")
 
+def call_git(*args, cwd):
+    to_exec = [GIT_EXEC] + list(args)
+
+    # Make sure that git-lfs exists on the PATH.
+    # (It doesn't by default on lsst-dev01)
+    env = os.environ.copy()
+    env['GIT_LFS_SKIP_SMUDGE'] = '1'
+
+    if DEBUG:
+        print(to_exec)
+        print(env['PATH'])
+        print(cwd)
+    return subprocess.check_output(to_exec, cwd=cwd, env=env)
+
+
 class Repository(object):
     def __init__(self, path):
         self.path = path
 
     def __call_git(self, *args):
-        to_exec = [GIT_EXEC] + list(args)
-
-        # Make sure that git-lfs exists on the PATH.
-        # (It doesn't by default on lsst-dev01)
-        env = os.environ.copy()
-
-        if DEBUG:
-            print(to_exec)
-            print(env['PATH'])
-        return subprocess.check_output(to_exec, cwd=self.path, env=env)
+        return call_git(*args, cwd=self.path)
 
     def commits(self, reachable_from=None, merges_only=False):
         args = ["log", "--pretty=format:%H"]
@@ -68,6 +74,15 @@ class Repository(object):
         except AttributeError:
             if DEBUG:
                 print(message)
+
+    @classmethod
+    def materialize(cls, url: str, target_dir=str):
+        clone_path = os.path.join(target_dir, re.sub(r".git$", "", url.split('/')[-1]))
+        if not os.path.exists(clone_path):
+            call_git("clone", url, cwd=target_dir)
+        repo = cls(clone_path)
+        repo.update()
+        return repo
 
 
 def get_ticket_summary(ticket):
