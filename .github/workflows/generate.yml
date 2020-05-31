@@ -1,0 +1,16 @@
+name: Generate changelog
+
+on:
+    push:
+
+jobs:
+    generate:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-python@v2
+              with:
+                python-version: 3.8
+            - run: python -c "import sys; print(sys.version)"
+            - run: pwd
+            - run: ls -lart
