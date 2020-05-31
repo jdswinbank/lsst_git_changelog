@@ -145,7 +145,7 @@ def format_output(changelog, repositories):
         print_tag(tag, changelog[tag])
 
     gen_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M +00:00")
-    repos = ", ".join(os.path.basename(r) for r in sorted(repositories))
+    repos = ", ".join(os.path.basename(r) for r in sorted(r.path for r in repositories))
     print("<p>Generated at {} by considering {}.</p>".format(gen_date, repos))
     print("</body>")
     print("</html>")
@@ -153,12 +153,7 @@ def format_output(changelog, repositories):
 def generate_changelog(repositories):
     # Dict of tag -> ticket -> affected packages
     changelog =  defaultdict(lambda: defaultdict(set))
-    for repository in repositories:
-        if DEBUG:
-            print(repository)
-        r = Repository(repository)
-        r.update()
-
+    for r in repositories:
         # Extract all tags which look like weeklies
         tags = sorted(r.tags("^w\.\d{4}\.\d?\d$"), reverse=True, key=tag_key)
         # Also include tickets which aren't yet in a weekly
@@ -172,9 +167,9 @@ def generate_changelog(repositories):
                 ticket = r.ticket(r.message(sha))
                 if ticket:
                     if newtag == r.branch_name():
-                        changelog["master"][ticket].add(os.path.basename(repository))
+                        changelog["master"][ticket].add(os.path.basename(r.path))
                     else:
-                        changelog[newtag][ticket].add(os.path.basename(repository))
+                        changelog[newtag][ticket].add(os.path.basename(r.path))
     return changelog
 
 
