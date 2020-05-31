@@ -17,7 +17,7 @@ except ModuleNotFoundError:
 
 DEBUG = False
 GIT_EXEC = "/usr/bin/git"
-GIT_LFS_EXEC = "/software/lsstsw/stack/stack/current/Linux64/git_lfs/2.8.0/bin/git-lfs"
+GIT_LFS_EXEC = "/software/lsstsw/stack/python/current/envs/lsst-scipipe/bin/git-lfs"
 JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
 
 # Populated by looking at https://sw.lsstcorp.org/eupspkg/tags/w_2017_8.list,
