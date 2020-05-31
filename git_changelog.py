@@ -11,7 +11,6 @@ import subprocess
 
 DEBUG = False
 GIT_EXEC = "/usr/bin/git"
-GIT_LFS_EXEC = "/software/lsstsw/stack/python/current/envs/lsst-scipipe/bin/git-lfs"
 JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
 
 # Populated by looking at https://sw.lsstcorp.org/eupspkg/tags/w_2017_8.list,
@@ -29,7 +28,6 @@ class Repository(object):
         # Make sure that git-lfs exists on the PATH.
         # (It doesn't by default on lsst-dev01)
         env = os.environ.copy()
-        env['PATH'] = "%s:%s" % (os.path.dirname(GIT_LFS_EXEC), env["PATH"])
 
         if DEBUG:
             print(to_exec)
