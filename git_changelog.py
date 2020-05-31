@@ -174,10 +174,9 @@ def generate_changelog(repositories):
 
 
 if __name__ == "__main__":
-    #changelog = generate_changelog(REPOSITORIES)
-    #format_output(changelog, REPOSITORIES)
     target_dir = os.path.expanduser('~/repos')
-    Repository.materialize("https://github.com/lsst/meas_base.git", target_dir)
-    Repository.materialize("https://github.com/lsst/afw.git", target_dir)
-    Repository.materialize("https://github.com/lsst/daf_butler.git", target_dir)
+    repos = [Repository.materialize("https://github.com/lsst/afwdata.git", target_dir),
+             Repository.materialize("https://github.com/lsst/eigen.git", target_dir)]
+    changelog = generate_changelog(repos)
+    format_output(changelog, repos)
 
