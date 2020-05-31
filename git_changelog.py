@@ -1,19 +1,13 @@
-from __future__ import print_function
 from collections import defaultdict
+from urllib.request import urlopen, HTTPError
+
 import datetime
+import dbm
 import glob
 import json
 import os
 import re
 import subprocess
-from urllib2 import urlopen, HTTPError
-
-try:
-    # Python 2
-    import anydbm as dbm
-except ModuleNotFoundError:
-    # Python 3
-    import dbm
 
 DEBUG = False
 GIT_EXEC = "/usr/bin/git"
