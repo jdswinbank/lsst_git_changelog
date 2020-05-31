@@ -77,6 +77,7 @@ class Repository(object):
 
     @classmethod
     def materialize(cls, url: str, target_dir=str):
+        os.makedirs(target_dir, exist_ok=True)
         clone_path = os.path.join(target_dir, re.sub(r".git$", "", url.split('/')[-1]))
         if not os.path.exists(clone_path):
             call_git("clone", url, cwd=target_dir)
@@ -178,5 +179,8 @@ def generate_changelog(repositories):
 
 
 if __name__ == "__main__":
-    changelog = generate_changelog(REPOSITORIES)
-    format_output(changelog, REPOSITORIES)
+    #changelog = generate_changelog(REPOSITORIES)
+    #format_output(changelog, REPOSITORIES)
+    target_dir = os.path.expanduser("/repos")
+    Repository.materialize("https://github.com/lsst/daf_butler.git", target_dir)
+

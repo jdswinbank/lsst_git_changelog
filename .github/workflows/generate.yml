@@ -11,6 +11,7 @@ jobs:
             - uses: actions/setup-python@v2
               with:
                 python-version: 3.8
-            - run: python -c "import sys; print(sys.version)"
+            - run: ls -lart /repos || echo "no repos"
+            - run: python git_changelog.py
             - run: pwd
-            - run: ls -lart
+            - run: ls -lart /repos
