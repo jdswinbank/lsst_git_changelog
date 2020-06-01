@@ -193,10 +193,9 @@ def get_urls_for_packages(packages: Set[str], repos_yaml: str = REPOS_YAML) -> D
 
 if __name__ == "__main__":
     target_dir = os.path.expanduser('~/repos')
-    repos = [Repository.materialize("https://github.com/lsst/afwdata.git", target_dir, branch_name="master"),
-             Repository.materialize("https://github.com/lsst/eigen.git", target_dir, branch_name="master"),
-             Repository.materialize("https://github.com/lsst/fgcm.git", target_dir, branch_name="lsst-dev")]
+    pkgs = get_urls_for_packages(get_packages_in_w_latest())
+    repos = []
+    for pkg in pkgs.values():
+        repos.append(Repository.materialize(pkg['url'], target_dir, branch_name=pkg.get("ref", "master")))
     changelog = generate_changelog(repos)
     format_output(changelog, repos)
-
-#    pkgs = get_urls_for_packages(get_packages_in_w_latest())
