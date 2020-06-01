@@ -28,4 +28,4 @@ jobs:
             - run: ls -lart ~/repos || echo "no repos"
             - run: python git_changelog.py
             - run: pwd
-            - run: ls -lart ~/repos
+            - run: du -sch ~/repos
