@@ -85,8 +85,7 @@ class Repository(object):
 
 
 def get_ticket_summary(ticket):
-    dbname = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                          "ticket.cache")
+    dbname = os.path.join(os.path.expanduser("~/repos"), "ticket.cache")
     # Context manager in Py3, but not 2, apparently
     db = dbm.open(dbname, "c")
     try:
