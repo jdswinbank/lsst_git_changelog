@@ -39,8 +39,9 @@ def call_git(*args, cwd):
 
 
 class Repository(object):
-    def __init__(self, path):
+    def __init__(self, path, *, branch_name: str = "master"):
         self.path = path
+        self.branch_name = branch_name
 
     def __call_git(self, *args):
         return call_git(*args, cwd=self.path)
@@ -61,16 +62,7 @@ class Repository(object):
                 if re.search(pattern, tag)]
 
     def update(self):
-        return self.__call_git("pull")
-
-    def branch_name(self):
-        branches = [br.strip("* ") for br in
-                    self.__call_git("branch").split('\n')
-                    if br]
-        if "lsst-dev" in branches:
-            return "lsst-dev"
-        else:
-            return "master"
+        return self.__call_git("fetch", "origin", f"{self.branch_name}:{self.branch_name}")
 
     @staticmethod
     def ticket(message):
@@ -81,12 +73,13 @@ class Repository(object):
                 print(message)
 
     @classmethod
-    def materialize(cls, url: str, target_dir=str):
+    def materialize(cls, url: str, target_dir=str, *, branch_name: str = "master"):
         os.makedirs(target_dir, exist_ok=True)
-        clone_path = os.path.join(target_dir, re.sub(r".git$", "", url.split('/')[-1]))
+        repo_dir_name = re.sub(r".git$", "", url.split('/')[-1])
+        clone_path = os.path.join(target_dir, repo_dir_name)
         if not os.path.exists(clone_path):
-            call_git("clone", url, cwd=target_dir)
-        repo = cls(clone_path)
+            call_git("clone", "--bare", "--branch", branch_name, url, repo_dir_name, cwd=target_dir)
+        repo = cls(clone_path, branch_name=branch_name)
         repo.update()
         return repo
 
@@ -162,7 +155,7 @@ def generate_changelog(repositories):
         # Extract all tags which look like weeklies
         tags = sorted(r.tags("^w\.\d{4}\.\d?\d$"), reverse=True, key=tag_key)
         # Also include tickets which aren't yet in a weekly
-        tags.insert(0, r.branch_name())
+        tags.insert(0, r.branch_name)
 
         for newtag, oldtag in zip(tags, tags[1:]):
             merges = (set(r.commits(newtag, merges_only=True)) -
@@ -171,7 +164,7 @@ def generate_changelog(repositories):
             for sha in merges:
                 ticket = r.ticket(r.message(sha))
                 if ticket:
-                    if newtag == r.branch_name():
+                    if newtag == r.branch_name:
                         changelog["master"][ticket].add(os.path.basename(r.path))
                     else:
                         changelog[newtag][ticket].add(os.path.basename(r.path))
@@ -202,8 +195,9 @@ def get_urls_for_packages(packages: Set[str], repos_yaml: str = REPOS_YAML) -> D
 
 if __name__ == "__main__":
     target_dir = os.path.expanduser('~/repos')
-    repos = [Repository.materialize("https://github.com/lsst/afwdata.git", target_dir),
-             Repository.materialize("https://github.com/lsst/eigen.git", target_dir)]
+    repos = [Repository.materialize("https://github.com/lsst/afwdata.git", target_dir, branch_name="master"),
+             Repository.materialize("https://github.com/lsst/eigen.git", target_dir, branch_name="master"),
+             Repository.materialize("https://github.com/lsst/fgcm.git", target_dir, branch_name="lsst-dev")]
     changelog = generate_changelog(repos)
     format_output(changelog, repos)
 
