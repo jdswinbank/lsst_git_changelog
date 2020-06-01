@@ -26,6 +26,11 @@ jobs:
                 python -m pip install --upgrade pip
                 pip install pyyaml
             - run: ls -lart ~/repos || echo "no repos"
-            - run: python git_changelog.py
-            - run: pwd
+            - run: mkdir output
+            - run: python git_changelog.py > output/index.html
             - run: du -sch ~/repos
+            - uses: JamesIves/github-pages-deploy-action@releases/v3
+              with:
+                ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+                BRANCH: gh-pages
+                FOLDER: output
