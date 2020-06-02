@@ -156,8 +156,8 @@ def generate_changelog(repositories):
         tags.insert(0, r.branch_name)
 
         for newtag, oldtag in zip(tags, tags[1:]):
-            merges = (set(r.commits(newtag, merges_only=True)) -
-                      set(r.commits(oldtag, merges_only=True)))
+            merges = (set(r.commits(newtag if newtag == r.branch_name else "refs/tags/" + newtag, merges_only=True)) -
+                      set(r.commits(oldtag if oldtag == r.branch_name else "refs/tags/" + oldtag, merges_only=True)))
 
             for sha in merges:
                 ticket = r.ticket(r.message(sha))
