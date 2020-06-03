@@ -2,75 +2,14 @@ import datetime
 import dbm
 import json
 import os
-import re
-import shutil
-import subprocess
 import yaml
 
 from collections import defaultdict
 from typing import Dict, Set
 from urllib.request import urlopen, HTTPError
 
-DEBUG = False
-GIT_EXEC = shutil.which("git")
-JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
-EUPS_PKGROOT = "https://eups.lsst.codes/stack/src/"
-REPOS_YAML = "https://raw.githubusercontent.com/lsst/repos/master/etc/repos.yaml"
-
-def call_git(*args, cwd):
-    to_exec = [GIT_EXEC] + list(args)
-
-    if DEBUG:
-        print(to_exec)
-        print(env['PATH'])
-        print(cwd)
-    return subprocess.check_output(to_exec, cwd=cwd).decode('utf-8')
-
-
-class Repository(object):
-    def __init__(self, path, *, branch_name: str = "master"):
-        self.path = path
-        self.branch_name = branch_name
-
-    def __call_git(self, *args):
-        return call_git(*args, cwd=self.path)
-
-    def commits(self, reachable_from=None, merges_only=False):
-        args = ["log", "--pretty=format:%H"]
-        if reachable_from:
-            args.append(reachable_from)
-        if merges_only:
-            args.append("--merges")
-        return self.__call_git(*args).split()
-
-    def message(self, commit_hash):
-        return self.__call_git("show", commit_hash, "--pretty=format:%s")
-
-    def tags(self, pattern=r".*"):
-        return [tag for tag in self.__call_git("tag").split()
-                if re.search(pattern, tag)]
-
-    def update(self):
-        return self.__call_git("fetch", "origin", f"{self.branch_name}:{self.branch_name}")
-
-    @staticmethod
-    def ticket(message):
-        try:
-            return re.search(r"(DM-\d+)", message, re.IGNORECASE).group(1)
-        except AttributeError:
-            if DEBUG:
-                print(message)
-
-    @classmethod
-    def materialize(cls, url: str, target_dir=str, *, branch_name: str = "master"):
-        os.makedirs(target_dir, exist_ok=True)
-        repo_dir_name = re.sub(r".git$", "", url.split('/')[-1])
-        clone_path = os.path.join(target_dir, repo_dir_name)
-        if not os.path.exists(clone_path):
-            call_git("clone", "--bare", "--branch", branch_name, url, repo_dir_name, cwd=target_dir)
-        repo = cls(clone_path, branch_name=branch_name)
-        repo.update()
-        return repo
+from rubin_changelog.repository import Repository
+from rubin_changelog.config import DEBUG, JIRA_API_URL, EUPS_PKGROOT, REPOS_YAML
 
 
 def get_ticket_summary(ticket):
