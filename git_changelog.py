@@ -145,7 +145,7 @@ def generate_changelog(repositories):
     changelog =  defaultdict(lambda: defaultdict(set))
     for r in repositories:
         # Extract all tags which look like weeklies
-        tags = sorted(r.tags("^w\.\d{4}\.\d?\d$"), reverse=True, key=tag_key)
+        tags = sorted(r.tags(r"^w\.\d{4}\.\d?\d$"), reverse=True, key=tag_key)
         # Also include tickets which aren't yet in a weekly
         tags.insert(0, r.branch_name)
 
