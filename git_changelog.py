@@ -20,16 +20,11 @@ REPOS_YAML = "https://raw.githubusercontent.com/lsst/repos/master/etc/repos.yaml
 def call_git(*args, cwd):
     to_exec = [GIT_EXEC] + list(args)
 
-    # Make sure that git-lfs exists on the PATH.
-    # (It doesn't by default on lsst-dev01)
-    env = os.environ.copy()
-    env['GIT_LFS_SKIP_SMUDGE'] = '1'
-
     if DEBUG:
         print(to_exec)
         print(env['PATH'])
         print(cwd)
-    return subprocess.check_output(to_exec, cwd=cwd, env=env).decode('utf-8')
+    return subprocess.check_output(to_exec, cwd=cwd).decode('utf-8')
 
 
 class Repository(object):
