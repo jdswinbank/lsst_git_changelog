@@ -1,19 +1,19 @@
-from collections import defaultdict
-from urllib.request import urlopen, HTTPError
-
 import datetime
 import dbm
 import glob
 import json
 import os
 import re
+import shutil
 import subprocess
 import yaml
 
+from collections import defaultdict
 from typing import Dict, Set
+from urllib.request import urlopen, HTTPError
 
 DEBUG = False
-GIT_EXEC = "/usr/bin/git"
+GIT_EXEC = shutil.which("git")
 JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
 EUPS_PKGROOT = "https://eups.lsst.codes/stack/src/"
 REPOS_YAML = "https://raw.githubusercontent.com/lsst/repos/master/etc/repos.yaml"
