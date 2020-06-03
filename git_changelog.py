@@ -1,6 +1,5 @@
 import datetime
 import dbm
-import glob
 import json
 import os
 import re
@@ -17,11 +16,6 @@ GIT_EXEC = shutil.which("git")
 JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
 EUPS_PKGROOT = "https://eups.lsst.codes/stack/src/"
 REPOS_YAML = "https://raw.githubusercontent.com/lsst/repos/master/etc/repos.yaml"
-
-# Populated by looking at https://sw.lsstcorp.org/eupspkg/tags/w_2017_8.list,
-# excluding ndarray and fftw since they don't appear to be receiving regular
-# weekly tags (for reasons known, presumably, to SQuaRE).
-REPOSITORIES = glob.glob("/ssd/swinbank/src/*")
 
 def call_git(*args, cwd):
     to_exec = [GIT_EXEC] + list(args)
