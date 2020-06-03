@@ -92,7 +92,7 @@ def get_ticket_summary(ticket):
         # in the database, then decode again when we load it.
         return db[ticket].decode("utf-8")
     except HTTPError:
-            return ("Ticket description not available")
+        return ("Ticket description not available")
     finally:
         db.close()
 
