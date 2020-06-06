@@ -41,7 +41,7 @@ if __name__ == "__main__":
     repos_yaml = ReposYaml()
     repos = {Repository.materialize(repos_yaml[product]['url'], TARGET_DIR,
                                     branch_name=repos_yaml[product].get("ref", "master"))
-             for product in Eups()["w_latest"].products}
+             for product in Eups().all_products}
 
     changelog = generate_changelog(repos)
     format_output(changelog, repos)

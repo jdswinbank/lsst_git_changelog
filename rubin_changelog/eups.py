@@ -19,7 +19,7 @@ class EupsTag(object):
 
 
 class Eups(Mapping):
-    def __init__(self, *, pkgroot: str = EUPS_PKGROOT, pattern: str = "w_20"):
+    def __init__(self, *, pkgroot: str = EUPS_PKGROOT, pattern: str = "w_latest"):
         self._pkgroot = pkgroot
         self._pattern = pattern
         self._tags = {
@@ -58,3 +58,10 @@ class Eups(Mapping):
 
     def __len__(self) -> int:
         return len(self._tags)
+
+    @property
+    def all_products(self) -> List[str]:
+        products = set()
+        for tag in self.values():
+            products.update(tag.products)
+        return products
