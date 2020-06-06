@@ -8,7 +8,7 @@ from collections import defaultdict
 from typing import Dict, Set
 from urllib.request import urlopen, HTTPError
 
-from rubin_changelog.jira import get_ticket_summary
+from rubin_changelog.jira import JiraCache
 from rubin_changelog.repository import Repository
 from rubin_changelog.config import DEBUG, JIRA_API_URL, EUPS_PKGROOT, REPOS_YAML
 
@@ -25,10 +25,11 @@ def tag_key(tagname):
     return int(tagname.split(".")[1]) * 100 + int(tagname.split(".")[2])
 
 def print_tag(tagname, tickets):
+    jira = JiraCache()
     print("<h2>New in {}</h2>".format(tagname))
     print("<ul>")
     for ticket in sorted(tickets, key=lambda x: int(x[3:])):  # Numeric sort
-        summary = get_ticket_summary(ticket)
+        summary = jira[ticket]
         pkgs = ", ".join(sorted(tickets[ticket]))
         link_text = (u"<li><a href=https://jira.lsstcorp.org/browse/"
                      u"{ticket}>{ticket}</a>: {summary} [{pkgs}]</li>")
