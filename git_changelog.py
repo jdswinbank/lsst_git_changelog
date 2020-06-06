@@ -8,27 +8,10 @@ from collections import defaultdict
 from typing import Dict, Set
 from urllib.request import urlopen, HTTPError
 
+from rubin_changelog.jira import get_ticket_summary
 from rubin_changelog.repository import Repository
 from rubin_changelog.config import DEBUG, JIRA_API_URL, EUPS_PKGROOT, REPOS_YAML
 
-
-def get_ticket_summary(ticket):
-    dbname = os.path.join(os.path.expanduser("~/repos"), "ticket.cache")
-    # Context manager in Py3, but not 2, apparently
-    db = dbm.open(dbname, "c")
-    try:
-        if ticket not in db:
-            url = JIRA_API_URL + "/issue/" + ticket + "?fields=summary"
-            if DEBUG:
-                print(url)
-            db[ticket] = json.load(urlopen(url))['fields']['summary'].encode("utf-8")
-        # json gives us a unicode string, which we need to encode for storing
-        # in the database, then decode again when we load it.
-        return db[ticket].decode("utf-8")
-    except HTTPError:
-        return ("Ticket description not available")
-    finally:
-        db.close()
 
 def tag_key(tagname):
     """
