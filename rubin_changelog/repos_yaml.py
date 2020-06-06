@@ -5,7 +5,7 @@ from urllib.request import urlopen
 
 from rubin_changelog.config import REPOS_YAML
 
-class Repos(object):
+class ReposYaml(object):
     def __init__(self, *, repos_yaml: str = REPOS_YAML):
         with urlopen(repos_yaml) as u:
             self.__yaml = yaml.safe_load(u)

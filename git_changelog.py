@@ -4,9 +4,9 @@ import os
 from collections import defaultdict
 
 from rubin_changelog.eups import Eups
-from rubin_changelog.repos import Repos
+from rubin_changelog.repos_yaml import ReposYaml
 from rubin_changelog.repository import Repository
-from rubin_changelog.config import DEBUG
+from rubin_changelog.config import DEBUG, TARGET_DIR
 from rubin_changelog.utils import tag_key
 from rubin_changelog.output import format_output
 
@@ -37,13 +37,11 @@ def generate_changelog(repositories):
 if __name__ == "__main__":
     if DEBUG:
         logging.basicConfig(level=logging.DEBUG)
-    target_dir = os.path.expanduser('~/repos')
-    pkgs = Eups().products_for_tag("w_latest")
-    repos_yaml = Repos()
 
-    repos = {Repository.materialize(repos_yaml[pkg]['url'], target_dir,
-                                    branch_name=repos_yaml[pkg].get("ref", "master"))
-             for pkg in pkgs}
+    repos_yaml = ReposYaml()
+    repos = {Repository.materialize(repos_yaml[product]['url'], TARGET_DIR,
+                                    branch_name=repos_yaml[product].get("ref", "master"))
+             for product in Eups()["w_latest"].products}
 
     changelog = generate_changelog(repos)
     format_output(changelog, repos)
