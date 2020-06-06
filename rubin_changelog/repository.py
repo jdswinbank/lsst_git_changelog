@@ -54,7 +54,7 @@ class Repository(object):
         return result
 
     @classmethod
-    def materialize(cls, url: str, target_dir=str, *, branch_name: str = "master") -> "Repository":
+    def materialize(cls, url: str, target_dir: str, *, branch_name: str = "master") -> "Repository":
         os.makedirs(target_dir, exist_ok=True)
         repo_dir_name = re.sub(r".git$", "", url.split('/')[-1])
         clone_path = os.path.join(target_dir, repo_dir_name)
