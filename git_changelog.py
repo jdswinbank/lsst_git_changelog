@@ -9,6 +9,8 @@ from collections import defaultdict
 from typing import Dict, Set
 from urllib.request import urlopen, HTTPError
 
+from rubin_changelog.eups import Eups
+from rubin_changelog.repos import Repos
 from rubin_changelog.jira import JiraCache
 from rubin_changelog.repository import Repository
 from rubin_changelog.config import DEBUG, JIRA_API_URL, EUPS_PKGROOT, REPOS_YAML
@@ -81,36 +83,16 @@ def generate_changelog(repositories):
                         changelog[newtag][ticket].add(os.path.basename(r.path))
     return changelog
 
-def get_packages_in_w_latest(pkgroot: str = EUPS_PKGROOT) -> Set[str]:
-    u = urlopen(pkgroot + "/tags" + "/w_latest.list")
-    products = set()
-    for line in u.read().decode("utf-8").strip().split("\n"):
-        if line.startswith("EUPS distribution "):
-            continue
-        if line.strip()[0] == "#":
-            continue
-        else:
-            products.add(line.split()[0])
-    return products
-
-def get_urls_for_packages(packages: Set[str], repos_yaml: str = REPOS_YAML) -> Dict[str, Dict[str, str]]:
-    pkgs = {}
-    with urlopen(repos_yaml) as u:
-        y = yaml.safe_load(u)
-        for pkg in packages:
-            if isinstance(y[pkg], str):  # Must be a URL
-                pkgs[pkg] = {'url': y[pkg]}
-            else:
-                pkgs[pkg] = y[pkg]
-    return pkgs
-
 if __name__ == "__main__":
     if DEBUG:
         logging.basicConfig(level=logging.DEBUG)
     target_dir = os.path.expanduser('~/repos')
-    pkgs = get_urls_for_packages(get_packages_in_w_latest())
-    repos = []
-    for pkg in pkgs.values():
-        repos.append(Repository.materialize(pkg['url'], target_dir, branch_name=pkg.get("ref", "master")))
+    pkgs = Eups().products_for_tag("w_latest")
+    repos_yaml = Repos()
+
+    repos = {Repository.materialize(repos_yaml[pkg]['url'], target_dir,
+                                    branch_name=repos_yaml[pkg].get("ref", "master"))
+             for pkg in pkgs}
+
     changelog = generate_changelog(repos)
     format_output(changelog, repos)
