@@ -22,6 +22,9 @@ class Repository(object):
         self.path = path
         self.branch_name = branch_name
 
+        # Make sure we're using the appropriate branch
+        self.__call_git("symbolic-ref", "HEAD", f"refs/heads/{branch_name}")
+
     def __call_git(self, *args: str) -> str:
         return call_git(*args, cwd=self.path)
 
