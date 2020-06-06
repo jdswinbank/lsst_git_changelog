@@ -1,15 +1,18 @@
 import dbm
 import json
+import logging
 import os
 
 from urllib.request import urlopen
 from urllib.error import HTTPError
 
-from rubin_changelog.config import DEBUG, JIRA_API_URL, TICKET_CACHE
+from rubin_changelog.config import JIRA_API_URL, TICKET_CACHE
 
 
 class JiraCache(object):
-    def __init__(self, *, api_root: str = JIRA_API_URL, cache_location: str = TICKET_CACHE):
+    def __init__(
+        self, *, api_root: str = JIRA_API_URL, cache_location: str = TICKET_CACHE
+    ):
         self.__api_root = api_root
         self.__cache_location = cache_location
 
@@ -19,10 +22,12 @@ class JiraCache(object):
     def __getitem__(self, ticket: str) -> str:
         with dbm.open(self.__cache_location, "c") as db:  # type: ignore[attr-defined]
             if ticket not in db:
+                url = self.__url_for_ticket(ticket)
+                logging.debug(url)
                 try:
-                    db[ticket] = json.load(urlopen(self.__url_for_ticket(ticket)))[
-                        "fields"
-                    ]["summary"].encode("utf-8")
+                    db[ticket] = json.load(urlopen(url))["fields"]["summary"].encode(
+                        "utf-8"
+                    )
                 except HTTPError:
                     return "Ticket description not available"
             return db[ticket].decode("utf-8")

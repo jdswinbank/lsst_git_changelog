@@ -1,6 +1,7 @@
 import datetime
 import dbm
 import json
+import logging
 import os
 import yaml
 
@@ -104,6 +105,8 @@ def get_urls_for_packages(packages: Set[str], repos_yaml: str = REPOS_YAML) -> D
     return pkgs
 
 if __name__ == "__main__":
+    if DEBUG:
+        logging.basicConfig(level=logging.DEBUG)
     target_dir = os.path.expanduser('~/repos')
     pkgs = get_urls_for_packages(get_packages_in_w_latest())
     repos = []

@@ -1,19 +1,17 @@
+import logging
 import os
 import re
 import subprocess
 
 from typing import List, Optional
 
-from .config import DEBUG
-
 __all__ = ["Repository"]
 
 def call_git(*args: str, cwd: str, git_exec: str = "/usr/bin/git") -> str:
     to_exec = [git_exec] + list(args)
 
-    if DEBUG:
-        print(to_exec)
-        print(cwd)
+    logging.debug(to_exec)
+    logging.debug(cwd)
     return subprocess.check_output(to_exec, cwd=cwd).decode('utf-8')
 
 
@@ -51,8 +49,7 @@ class Repository(object):
         try:
             result = re.search(r"(DM-\d+)", message, re.IGNORECASE).group(1)  # type: ignore[union-attr]
         except AttributeError:
-            if DEBUG:
-                print(message)
+            logging.debug(message)
             result = None
         return result
 
