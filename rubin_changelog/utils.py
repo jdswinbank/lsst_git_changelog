@@ -2,9 +2,9 @@ def tag_key(tagname: str) -> int:
     """
     Convert a tagname ("w.YYYY.NN" or "w.YYYY.N") into a key for sorting.
 
-    "w.2017.1"  -> 201701
-    "w.2017.01" -> 201701
-    "w.2017.10" -> 201710
+    "w_2017_1"  -> 201701
+    "w_2017_01" -> 201701
+    "w_2017_10" -> 201710
     etc.
     """
-    return int(tagname.split(".")[1]) * 100 + int(tagname.split(".")[2])
+    return int(tagname.split("_")[1]) * 100 + int(tagname.split("_")[2])
