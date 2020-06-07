@@ -10,6 +10,7 @@ from typing import Any, Iterable, Iterator, List, Optional
 from lxml import html
 
 from .config import EUPS_PKGROOT
+from .utils import tag_key
 
 
 class EupsTag(object):
@@ -19,7 +20,8 @@ class EupsTag(object):
         self.products = products
 
     def __lt__(self, other):
-        return self.date < other.date
+        # sort by name, not by date; the latter is too unreliable.
+        return tag_key(self.name) < tag_key(other.name)
 
 
 class Eups(Mapping):
