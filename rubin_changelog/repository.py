@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import subprocess
+from datetime import datetime
 
 from typing import List, Optional
 
@@ -44,6 +45,9 @@ class Repository(object):
 
     def message(self, commit_hash: str) -> str:
         return self.__call_git("show", commit_hash, "--pretty=format:%s")
+
+    def tag_date(self, tag_name: str) -> datetime:
+        return datetime.fromtimestamp(int(self.__call_git("tag", "-l", tag_name, "--format=%(taggerdate:unix)")))
 
     def tags(self, pattern: str = r".*") -> List[str]:
         return [

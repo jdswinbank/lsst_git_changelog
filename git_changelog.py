@@ -80,6 +80,15 @@ def walk_tags(eups):#, repos):
         added = set(new_tag.products) - set(old_tag.products)
         dropped = set(old_tag.products) - set(new_tag.products)
         tickets = defaultdict(list)
+
+        if new_tag.name != "master":
+            # Timestamps on old EUPS tag lists are crazy; grab the true date from
+            # an example repo (assuming that afw is universal!).
+            try:
+                new_tag.date = products['afw'].tag_date(new_tag.name.replace('_', '.'))
+            except ValueError:
+                pass
+
         for product_name in set(new_tag.products) & set(old_tag.products):
             try:
                 product = products[product_name]
@@ -106,5 +115,5 @@ def walk_tags(eups):#, repos):
 if __name__ == "__main__":
     if DEBUG:
         logging.basicConfig(level=logging.DEBUG)
-    eups = Eups(pattern="w_20")
+    eups = Eups(pattern="w_2016")
     walk_tags(eups)
