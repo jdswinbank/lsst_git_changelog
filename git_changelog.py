@@ -3,7 +3,7 @@ import logging
 import os
 
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from rubin_changelog.config import DEBUG, TARGET_DIR
 from rubin_changelog.eups import Eups, EupsTag
@@ -14,29 +14,6 @@ from rubin_changelog.repos_yaml import ReposYaml
 from rubin_changelog.repository import Repository
 from rubin_changelog.utils import tag_key
 
-
-
-def generate_changelog(repositories):
-    # Dict of tag -> ticket -> affected packages
-    changelog =  defaultdict(lambda: defaultdict(set))
-    for r in repositories:
-        # Extract all tags which look like weeklies
-        tags = sorted(r.tags(r"^w\.\d{4}\.\d?\d$"), reverse=True, key=tag_key)
-        # Also include tickets which aren't yet in a weekly
-        tags.insert(0, r.branch_name)
-
-        for newtag, oldtag in zip(tags, tags[1:]):
-            merges = (set(r.commits(newtag if newtag == r.branch_name else "refs/tags/" + newtag, merges_only=True)) -
-                      set(r.commits(oldtag if oldtag == r.branch_name else "refs/tags/" + oldtag, merges_only=True)))
-
-            for sha in merges:
-                ticket = r.ticket(r.message(sha))
-                if ticket:
-                    if newtag == r.branch_name:
-                        changelog["master"][ticket].add(os.path.basename(r.path))
-                    else:
-                        changelog[newtag][ticket].add(os.path.basename(r.path))
-    return changelog
 
 def print_tag(tag: EupsTag, added: List[str], dropped: List[str], tickets: Dict[str, List[str]]):
     print(f"<h2>{tag.name}</h2>")
@@ -66,16 +43,26 @@ def print_tag(tag: EupsTag, added: List[str], dropped: List[str], tickets: Dict[
         print("</ul>")
 
 
-
-
-def walk_tags(eups):#, repos):
+def print_changelog(changelog: Dict[str, Dict[str, Union[str, List[str]]]]):
     print("<html>")
     print("<head><title>Rubin Science Pipelines Weekly Changelog</title></head>")
     print("<body>")
     print("<h1>Rubin Science Pipelines Weekly Changelog</h1>")
+
+    for tag, values in changelog.items():
+        print_tag(tag, **values)
+
+    gen_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M +00:00")
+    print(f"<p>Generated at {gen_date} by considering {', '.join(eups.all_products)}.</p>")
+    print("</body>")
+    print("<html>")
+
+
+def generate_changelog(eups: Eups) -> Dict[EupsTag, Dict[str, Union[str, List[str]]]]:
     products = Products()
     tags = sorted(eups.values(), reverse=True)
     tags.insert(0, EupsTag("master", None, tags[0].products))
+    changelog = {}
     for new_tag, old_tag in zip(tags, tags[1:]):
         added = set(new_tag.products) - set(old_tag.products)
         dropped = set(old_tag.products) - set(new_tag.products)
@@ -102,18 +89,12 @@ def walk_tags(eups):#, repos):
                 ticket = products[product_name].ticket(products[product_name].message(sha))
                 if ticket:
                     tickets[ticket].append(product_name)
-        print_tag(new_tag, added, dropped, tickets)
-
-    gen_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M +00:00")
-    print(f"<p>Generated at {gen_date} by considering {', '.join(eups.all_products)}.</p>")
-    print("</body>")
-    print("<html>")
-
-
+        changelog[new_tag] = {"added": added, "dropped": dropped, "tickets": tickets}
+    return changelog
 
 
 if __name__ == "__main__":
     if DEBUG:
         logging.basicConfig(level=logging.DEBUG)
-    eups = Eups(pattern="w_2016")
-    walk_tags(eups)
+    eups = Eups()
+    print_changelog(generate_changelog(eups))
