@@ -1,10 +1,11 @@
+import logging
 import re
 
 from datetime import datetime
 from urllib.request import urlopen
 from collections import Mapping
 
-from typing import Any, Iterable, Iterator, List
+from typing import Any, Iterable, Iterator, List, Optional
 
 from lxml import html
 
@@ -12,10 +13,13 @@ from .config import EUPS_PKGROOT
 
 
 class EupsTag(object):
-    def __init__(self, name: str, date: datetime, products: Iterable[str]):
+    def __init__(self, name: str, date: Optional[datetime], products: Iterable[str]):
         self.name = name
         self.date = date
         self.products = products
+
+    def __lt__(self, other):
+        return self.date < other.date
 
 
 class Eups(Mapping):
@@ -28,6 +32,7 @@ class Eups(Mapping):
         }
 
     def __retrieve_tag_list(self) -> List[str]:
+        logging.debug(f"Fetching tag list")
         h = html.parse(urlopen(self._pkgroot + "/tags"))
         return [
             el.text[:-5]
@@ -36,6 +41,7 @@ class Eups(Mapping):
         ]
 
     def __retrieve_tag(self, tag_name: str) -> EupsTag:
+        logging.debug(f"Fetching tag {tag_name}")
         u = urlopen(f"{self._pkgroot}/tags/{tag_name}.list")
         tag_date = datetime.strptime(
             u.info()["last-modified"], "%a, %d %b %Y %H:%M:%S %Z"
