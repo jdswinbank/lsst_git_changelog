@@ -96,5 +96,5 @@ def generate_changelog(eups: Eups) -> Dict[EupsTag, Dict[str, Union[str, List[st
 if __name__ == "__main__":
     if DEBUG:
         logging.basicConfig(level=logging.DEBUG)
-    eups = Eups()
+    eups = Eups(pattern="w_2020_2")
     print_changelog(generate_changelog(eups))
