@@ -53,7 +53,7 @@ def print_changelog(changelog: Dict[str, Dict[str, Union[str, List[str]]]]):
         print_tag(tag, **values)
 
     gen_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M +00:00")
-    print(f"<p>Generated at {gen_date} by considering {', '.join(eups.all_products)}.</p>")
+    print(f"<p>Generated at {gen_date} by considering {', '.join(sorted(eups.all_products))}.</p>")
     print("</body>")
     print("<html>")
 
