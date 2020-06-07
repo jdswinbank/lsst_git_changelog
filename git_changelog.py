@@ -81,6 +81,11 @@ def walk_tags(eups):#, repos):
         dropped = set(old_tag.products) - set(new_tag.products)
         tickets = defaultdict(list)
         for product_name in set(new_tag.products) & set(old_tag.products):
+            try:
+                product = products[product_name]
+            except KeyError:
+                logging.debug(f"Skipping ticket list on {product_name} (probably skiplisted)")
+                continue
             old_ref_name = f"refs/tags/{old_tag.name.replace('_', '.')}"
             new_ref_name = f"refs/tags/{new_tag.name.replace('_', '.')}" if new_tag.name != "master" else products[product_name].branch_name
             merges = products[product_name].merges_between(old_ref_name, new_ref_name)
