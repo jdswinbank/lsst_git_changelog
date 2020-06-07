@@ -9,7 +9,7 @@ from typing import Any, Iterable, Iterator, List, Optional
 
 from lxml import html
 
-from .config import EUPS_PKGROOT
+from .config import EUPS_PKGROOT, TAG_SKIPLIST
 from .utils import tag_key
 
 
@@ -39,7 +39,7 @@ class Eups(Mapping):
         return [
             el.text[:-5]
             for el in h.findall("./body/table/tr/td/a")
-            if el.text[-5:] == ".list" and re.match(self._pattern, el.text)
+            if el.text[-5:] == ".list" and re.match(self._pattern, el.text) and not el.text[:-5] in TAG_SKIPLIST
         ]
 
     def __retrieve_tag(self, tag_name: str) -> EupsTag:
