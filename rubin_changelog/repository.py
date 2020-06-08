@@ -54,6 +54,11 @@ class Repository(object):
             tag for tag in self.__call_git("tag").split() if re.search(pattern, tag)
         ]
 
+    def add_tag(self, tag_name: str, target: str) -> None:
+        if tag_name in self.tags():
+            self.__call_git("tag", "-d", tag_name)
+        self.__call_git("tag", tag_name, target)
+
     def update(self) -> str:
         return self.__call_git(
             "fetch", "origin", f"{self.branch_name}:{self.branch_name}"

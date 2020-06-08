@@ -8,3 +8,4 @@ TARGET_DIR = os.path.expanduser("~/repos")
 TICKET_CACHE = os.path.join(TARGET_DIR, "ticket.cache")
 PRODUCT_SKIPLIST = ["boost", "galsim", "mariadb", "mariadbclient", "qserv_testdata", "sims_skybrightness_data"]
 TAG_SKIPLIST = ["w_2019_30"]
+EXTRA_TAGS = {"dax_ppdb": [("w.2019.46", "w.2019.45")]}
