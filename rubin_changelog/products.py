@@ -19,7 +19,7 @@ class Products(object):
                 TARGET_DIR,
                 branch_name=self._repos_yaml[product_name].get("ref", "master"),
             )
-        if product_name in EXTRA_TAGS:
-            for tag_name, target in EXTRA_TAGS[product_name]:
-                self._products[product_name].add_tag(tag_name, target)
+            if product_name in EXTRA_TAGS:
+                for tag_name, target in EXTRA_TAGS[product_name]:
+                    self._products[product_name].add_tag(tag_name, target)
         return self._products[product_name]
