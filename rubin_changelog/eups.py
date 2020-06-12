@@ -30,7 +30,10 @@ class EupsTag(object):
 
     @property
     def git_name(self):
-        return self.name.lstrip('v').replace("_", ".")
+        # If it's *not* an RC, we need to strip the leading "v"
+        # ... except in some early releases, but let's froget about them.
+        name = self.name.lstrip('v') if not "rc" in self.name else self.name
+        return name.replace("_", ".")
 
 
 class Eups(Mapping):
