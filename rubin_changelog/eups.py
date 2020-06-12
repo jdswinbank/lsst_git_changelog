@@ -10,18 +10,27 @@ from typing import Any, Iterable, Iterator, List, Optional
 from lxml import html
 
 from .config import EUPS_PKGROOT, TAG_SKIPLIST
+from .products import products
 from .utils import tag_key
 
 
 class EupsTag(object):
-    def __init__(self, name: str, date: Optional[datetime], products: Iterable[str]):
+    def __init__(self, name: str, date: Optional[datetime], product_list: Iterable[str]):
         self.name = name
         self.date = date
-        self.products = products
+        self.products = product_list
+        if "afw" in self.products:
+            try:
+                self.date = products['afw'].tag_date(self.git_name)
+            except:
+                pass
 
     def __lt__(self, other):
-        # sort by name, not by date; the latter is too unreliable.
-        return tag_key(self.name) < tag_key(other.name)
+        return self.date < other.date
+
+    @property
+    def git_name(self):
+        return self.name.lstrip('v').replace("_", ".")
 
 
 class Eups(Mapping):

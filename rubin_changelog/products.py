@@ -23,3 +23,5 @@ class Products(object):
                 for tag_name, target in EXTRA_TAGS[product_name]:
                     self._products[product_name].add_tag(tag_name, target)
         return self._products[product_name]
+
+products = Products()

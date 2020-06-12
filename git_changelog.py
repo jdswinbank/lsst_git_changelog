@@ -9,8 +9,7 @@ from rubin_changelog.config import DEBUG, TARGET_DIR
 from rubin_changelog.eups import Eups, EupsTag
 from rubin_changelog.jira import JiraCache
 from rubin_changelog.output import format_output
-from rubin_changelog.products import Products
-from rubin_changelog.repos_yaml import ReposYaml
+from rubin_changelog.products import products
 from rubin_changelog.repository import Repository
 from rubin_changelog.utils import tag_key
 
@@ -59,7 +58,6 @@ def print_changelog(changelog: Dict[str, Dict[str, Union[str, List[str]]]]):
 
 
 def generate_changelog(eups: Eups) -> Dict[EupsTag, Dict[str, Union[str, List[str]]]]:
-    products = Products()
     tags = sorted(eups.values(), reverse=True)
     tags.insert(0, EupsTag("master", None, tags[0].products))
     changelog = {}
@@ -72,7 +70,7 @@ def generate_changelog(eups: Eups) -> Dict[EupsTag, Dict[str, Union[str, List[st
             # Timestamps on old EUPS tag lists are crazy; grab the true date from
             # an example repo (assuming that afw is universal!).
             try:
-                new_tag.date = products['afw'].tag_date(new_tag.name.replace('_', '.'))
+                new_tag.date = products['afw'].tag_date(new_tag.git_name)
             except ValueError:
                 pass
 
@@ -82,8 +80,8 @@ def generate_changelog(eups: Eups) -> Dict[EupsTag, Dict[str, Union[str, List[st
             except KeyError:
                 logging.debug(f"Skipping ticket list on {product_name} (probably skiplisted)")
                 continue
-            old_ref_name = f"refs/tags/{old_tag.name.replace('_', '.')}"
-            new_ref_name = f"refs/tags/{new_tag.name.replace('_', '.')}" if new_tag.name != "master" else products[product_name].branch_name
+            old_ref_name = f"refs/tags/{old_tag.git_name}"
+            new_ref_name = f"refs/tags/{new_tag.git_name}" if new_tag.name != "master" else products[product_name].branch_name
             merges = products[product_name].merges_between(old_ref_name, new_ref_name)
             for sha in merges:
                 ticket = products[product_name].ticket(products[product_name].message(sha))
