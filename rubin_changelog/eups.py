@@ -1,10 +1,11 @@
 import logging
 import re
 
-from datetime import datetime
-from urllib.request import urlopen
 from collections import Mapping
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from subprocess import CalledProcessError
+from urllib.request import urlopen
 
 from typing import Any, Iterable, Iterator, List, Tuple, Set, Optional
 
@@ -12,6 +13,29 @@ from lxml import html  # type: ignore
 
 from .config import EUPS_PKGROOT, TAG_SKIPLIST, PRODUCT_SKIPLIST
 from .utils import infer_release_date, git_ref_from_eups_version
+
+def tag_product(products, product_name, tag_name, product_version, fallback_date):
+    try:
+        product = products[product_name]
+    except KeyError as e:
+        logging.warning(f"Repository for {product_name} not available: {e}")
+    else:
+        if tag_name not in product.tags:
+            try:
+                # If we know the correct version, tag it directly...
+                product.add_tag(
+                    tag_name, git_ref_from_eups_version(product_version)
+                )
+            except CalledProcessError as e:
+                # ...otherwise, add a tag based on date.
+                logging.warning(
+                    f"Failed to tag {product_name} with version "
+                    f"{git_ref_from_eups_version(product_version)}: "
+                    f"Git said: \"{e.output.decode('utf-8').strip()}\" "
+                    f"Falling back to timestamp."
+                )
+                date_sha = product.sha_for_date(fallback_date)
+                product.add_tag(tag_name, date_sha)
 
 
 class EupsTag(object):
@@ -24,36 +48,39 @@ class EupsTag(object):
         self.name = name
         self.products = [product[0] for product in product_list]
 
-        # IF we can infer a release date based on the tag name, then use that.
+        # If we can infer a release date based on the tag name, then use that.
         # Otherwise, use the candidate date supplied (e.g. from HTTP).
         self.date = infer_release_date(self.name) or candidate_date
 
-        for (product_name, product_version) in product_list:
-            if self.name == "master":
-                continue
-            from .products import products
+        from .products import products
+        with ThreadPoolExecutor() as executor:
+            for (product_name, product_version) in product_list:
+                if self.name == "master":
+                    continue
+                executor.submit(tag_product, products, product_name, self.name, product_version, self.date)
 
-            try:
-                product = products[product_name]
-            except KeyError as e:
-                logging.warning(f"Repository for {product_name} not available: {e}")
-            else:
-                if self.name not in product.tags:
-                    try:
-                        # If we know the correct version, tag it directly...
-                        product.add_tag(
-                            self.name, git_ref_from_eups_version(product_version)
-                        )
-                    except CalledProcessError as e:
-                        # ...otherwise, add a tag based on date.
-                        logging.warning(
-                            f"Failed to tag {product_name} with version "
-                            f"{git_ref_from_eups_version(product_version)}: "
-                            f"Git said: \"{e.output.decode('utf-8').strip()}\" "
-                            f"Falling back to timestamp."
-                        )
-                        date_sha = products[product_name].sha_for_date(self.date)
-                        product.add_tag(self.name, date_sha)
+#                def tag_repo():
+#                    try:
+#                        product = products[product_name]
+#                    except KeyError as e:
+#                        logging.warning(f"Repository for {product_name} not available: {e}")
+#                    else:
+#                        if self.name not in product.tags:
+#                            try:
+#                                # If we know the correct version, tag it directly...
+#                                product.add_tag(
+#                                    self.name, git_ref_from_eups_version(product_version)
+#                                )
+#                            except CalledProcessError as e:
+#                                # ...otherwise, add a tag based on date.
+#                                logging.warning(
+#                                    f"Failed to tag {product_name} with version "
+#                                    f"{git_ref_from_eups_version(product_version)}: "
+#                                    f"Git said: \"{e.output.decode('utf-8').strip()}\" "
+#                                    f"Falling back to timestamp."
+#                                )
+#                                date_sha = products[product_name].sha_for_date(self.date)
+#                                product.add_tag(self.name, date_sha)
 
     def __lt__(self, other):
         logging.info(f"{self.name}, {self.date}")
