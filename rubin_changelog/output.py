@@ -39,9 +39,9 @@ def print_tag(
 
 def print_changelog(changelog: Changelog, product_names: Set[str]):
     print("<html>")
-    print("<head><title>Rubin Science Pipelines Weekly Changelog</title></head>")
+    print("<head><title>Rubin Science Pipelines Changelog</title></head>")
     print("<body>")
-    print("<h1>Rubin Science Pipelines Weekly Changelog</h1>")
+    print("<h1>Rubin Science Pipelines Changelog</h1>")
 
     for tag, values in changelog.items():
         print_tag(tag, **values)
