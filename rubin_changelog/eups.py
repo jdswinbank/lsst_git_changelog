@@ -75,7 +75,7 @@ class Eups(Mapping):
         }
 
     def __retrieve_tag_list(self) -> List[str]:
-        logging.debug(f"Fetching tag list")
+        logging.debug("Fetching tag list")
         h = html.parse(urlopen(self._pkgroot + "/tags"))
         return [
             el.text[:-5]
