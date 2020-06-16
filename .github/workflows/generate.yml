@@ -27,13 +27,16 @@ jobs:
               run: |
                 python -m pip install --upgrade pip
                 pip install pyyaml lxml
-            - run: ls -lart ~/repos || echo "no repos"
-            - run: mkdir -p output/weekly
-            - run: mkdir -p output/release
-            - run: python git_changelog.py --weekly > output/weekly/index.html
-            - run: python git_changelog.py --release > output/release/index.html
-            - run: du -sch ~/repos
-            - uses: JamesIves/github-pages-deploy-action@releases/v3
+            - name: Create weekly changelog
+              run: |
+                mkdir -p output/weekly
+                python git_changelog.py --weekly > output/weekly/index.html
+            - name: Create release changelog
+              run: |
+                mkdir -p output/release
+                python git_changelog.py --release > output/release/index.html
+            - name: Deploy to Netlify
+              uses: JamesIves/github-pages-deploy-action@releases/v3
               with:
                 ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
                 BRANCH: deploy
