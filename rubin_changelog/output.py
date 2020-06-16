@@ -1,40 +1,54 @@
-import datetime
-import os
+from datetime import datetime
+from typing import Mapping, Set
 
+from .eups import EupsTag
 from .jira import JiraCache
-from .utils import tag_key
+from .typing import Changelog
+
+def print_tag(
+    tag: EupsTag, added: Set[str], dropped: Set[str], tickets: Mapping[str, Set[str]]
+):
+    print(f"<h2>{tag.name}</h2>")
+    if tag.date:
+        print(f"Released {tag.date}.")
+    if not added and not dropped and not tickets:
+        print("No changes in this version.")
+    if added:
+        print("<h3>Products added</h3>")
+        print("<ul>")
+        for product_name in added:
+            print(f"<li>{product_name}</li>")
+        print("</ul>")
+    if dropped:
+        print("<h3>Products removed</h3>")
+        print("<ul>")
+        for product_name in dropped:
+            print(f"<li>{product_name}</li>")
+        print("</ul>")
+    if tickets:
+        jira = JiraCache()
+        print("<h3>Tickets merged</h3>")
+        print("<ul>")
+        for ticket_id, product_names in tickets.items():
+            print(
+                f"<li><a href=https://jira.lsstcorp.org/browse/"
+                f"{ticket_id}>{ticket_id}</a>: {jira[ticket_id]} [{', '.join(product_names)}]</li>"
+            )
+        print("</ul>")
 
 
-def print_tag(tagname, tickets) -> None:
-    jira = JiraCache()
-    print("<h2>New in {}</h2>".format(tagname))
-    print("<ul>")
-    for ticket in sorted(tickets, key=lambda x: int(x[3:])):  # Numeric sort
-        summary = jira[ticket]
-        pkgs = ", ".join(sorted(tickets[ticket]))
-        link_text = (u"<li><a href=https://jira.lsstcorp.org/browse/"
-                     u"{ticket}>{ticket}</a>: {summary} [{pkgs}]</li>")
-        print(link_text.format(ticket=ticket.upper(), summary=summary, pkgs=pkgs))
-    print("</ul>")
-
-def format_output(changelog, repositories) -> None:
-    # Ew, needs a proper templating engine
+def print_changelog(changelog: Changelog, product_names: Set[str]):
     print("<html>")
-    print("<head><title>LSST DM Weekly Changelog</title></head>")
+    print("<head><title>Rubin Science Pipelines Weekly Changelog</title></head>")
     print("<body>")
-    print("<h1>LSST DM Weekly Changelog</h1>")
+    print("<h1>Rubin Science Pipelines Weekly Changelog</h1>")
 
-    # Always do master first if it exists
-    # (It won't if there are no changes since the most recent weekly)
-    if "master" in changelog:
-        print_tag("master", changelog.pop("master", None))
+    for tag, values in changelog.items():
+        print_tag(tag, **values)
 
-    # Then the other tags in order
-    for tag in sorted(changelog, reverse=True, key=tag_key):
-        print_tag(tag, changelog[tag])
-
-    gen_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M +00:00")
-    repos = ", ".join(os.path.basename(r) for r in sorted(r.path for r in repositories))
-    print("<p>Generated at {} by considering {}.</p>".format(gen_date, repos))
+    gen_date = datetime.utcnow().strftime("%Y-%m-%d %H:%M +00:00")
+    print(
+        f"<p>Generated at {gen_date} by considering {', '.join(sorted(product_names))}.</p>"
+    )
     print("</body>")
-    print("</html>")
+    print("<html>")
