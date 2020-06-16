@@ -9,8 +9,8 @@ def print_tag(
     tag: EupsTag, added: Set[str], dropped: Set[str], tickets: Mapping[str, Set[str]]
 ):
     print(f"<h2>{tag.name}</h2>")
-    if tag.date:
-        print(f"Released {tag.date}.")
+    if tag.name != "master":
+        print(f"Released {tag.date.strftime('%Y-%m-%d')}.")
     if not added and not dropped and not tickets:
         print("No changes in this version.")
     if added:
