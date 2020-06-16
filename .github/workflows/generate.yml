@@ -18,11 +18,11 @@ jobs:
               run: |
                 echo "::set-output name=date::$(/bin/date -u "+%s")"
               shell: bash
-#            - uses: actions/cache@v2
-#              with:
-#                path: ~/repos
-#                key: init-2020-06-15a-repos-${{ steps.get-date.outputs.date }}
-#                restore-keys: init-2020-06-15a-repos-
+            - uses: actions/cache@v2
+              with:
+                path: ~/repos
+                key: init-2020-06-16-repos-${{ steps.get-date.outputs.date }}
+                restore-keys: init-2020-06-16-repos-
             - name: Install dependencies
               run: |
                 python -m pip install --upgrade pip
