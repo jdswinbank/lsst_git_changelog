@@ -3,12 +3,13 @@ import logging
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import Mapping, MutableMapping, Set, Union
+from typing import Mapping, Set
 
 from rubin_changelog.config import DEBUG
 from rubin_changelog.eups import Eups, EupsTag
 from rubin_changelog.jira import JiraCache
 from rubin_changelog.products import products
+from rubin_changelog.typing import Changelog
 
 
 def print_tag(
@@ -41,11 +42,6 @@ def print_tag(
                 f"{ticket_id}>{ticket_id}</a>: {jira[ticket_id]} [{', '.join(product_names)}]</li>"
             )
         print("</ul>")
-
-
-Changelog = MutableMapping[
-    EupsTag, Mapping[str, Union[Set[str], Mapping[str, Set[str]]]]
-]
 
 
 def print_changelog(changelog: Changelog):
