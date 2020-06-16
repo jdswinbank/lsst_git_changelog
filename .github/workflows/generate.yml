@@ -29,7 +29,8 @@ jobs:
                 pip install pyyaml lxml
             - run: ls -lart ~/repos || echo "no repos"
             - run: mkdir output
-            - run: python git_changelog.py > output/index.html
+            - run: python git_changelog.py --weekly > output/weekly.html
+            - run: python git_changelog.py --release > output/release.html
             - run: du -sch ~/repos
             - uses: JamesIves/github-pages-deploy-action@releases/v3
               with:

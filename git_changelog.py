@@ -6,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Set
 
-from rubin_changelog.config import DEBUG
 from rubin_changelog.eups import Eups, EupsTag
 from rubin_changelog.output import print_changelog
 from rubin_changelog.products import products
