@@ -1,3 +1,4 @@
+import argparse
 import logging
 
 from collections import defaultdict
@@ -62,9 +63,19 @@ def generate_changelog(eups: Eups) -> Changelog:
         changelog[new_tag] = {"added": added, "dropped": dropped, "tickets": tickets}
     return changelog
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--weekly', action='store_const', const=r"w_20", dest='tag_prefix')
+    group.add_argument('--release', action='store_const', const=r"v\d\d", dest='tag_prefix')
+    group.add_argument('--tag-prefix')
+    parser.add_argument('--debug', action='store_true')
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
-    if DEBUG:
+    args = parse_args()
+    if args.debug:
         logging.basicConfig(level=logging.DEBUG)
-    eups = Eups(pattern=r"w_2020")
+    eups = Eups(pattern=args.tag_prefix)
     print_changelog(generate_changelog(eups), eups.all_products)
