@@ -4,7 +4,7 @@ import re
 import subprocess
 from datetime import datetime
 
-from typing import List, Optional
+from typing import List, Set, Optional
 
 
 def call_git(*args: str, cwd: str, git_exec: str = "/usr/bin/git") -> str:
@@ -19,6 +19,7 @@ class Repository(object):
     def __init__(self, path: str, *, branch_name: str = "master"):
         self.path = path
         self.branch_name = branch_name
+        self._tags: Set[str] = set()  # populated on demand.
 
         # Make sure we're using the appropriate branch
         self.__call_git("symbolic-ref", "HEAD", f"refs/heads/{branch_name}")
@@ -47,17 +48,26 @@ class Repository(object):
         return self.__call_git("show", commit_hash, "--pretty=format:%s")
 
     def tag_date(self, tag_name: str) -> datetime:
-        return datetime.fromtimestamp(int(self.__call_git("tag", "-l", tag_name, "--format=%(taggerdate:unix)")))
+        return datetime.fromtimestamp(
+            int(self.__call_git("tag", "-l", tag_name, "--format=%(taggerdate:unix)"))
+        )
 
-    def tags(self, pattern: str = r".*") -> List[str]:
-        return [
-            tag for tag in self.__call_git("tag").split() if re.search(pattern, tag)
-        ]
+    def sha_for_date(self, date: datetime):
+        return self.__call_git(
+            "rev-list", "-1", f'--before="{date}"', self.branch_name
+        ).strip()
+
+    @property
+    def tags(self) -> Set[str]:
+        if not self._tags:
+            self._tags = set(tag for tag in self.__call_git("tag").split())
+        return self._tags
 
     def add_tag(self, tag_name: str, target: str) -> None:
-        if tag_name in self.tags():
+        if tag_name in self.tags:
             self.__call_git("tag", "-d", tag_name)
         self.__call_git("tag", tag_name, target)
+        self._tags.add(tag_name)
 
     def update(self) -> str:
         return self.__call_git(

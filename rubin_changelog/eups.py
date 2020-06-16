@@ -4,36 +4,55 @@ import re
 from datetime import datetime
 from urllib.request import urlopen
 from collections import Mapping
+from subprocess import CalledProcessError
 
-from typing import Any, Iterable, Iterator, List, Optional
+from typing import Any, Iterable, Iterator, List, Tuple, Set, Optional
 
-from lxml import html
+from lxml import html  # type: ignore
 
-from .config import EUPS_PKGROOT, TAG_SKIPLIST
-from .products import products
-from .utils import tag_key
+from .config import EUPS_PKGROOT, TAG_SKIPLIST, PRODUCT_SKIPLIST
+from .utils import infer_release_date, git_ref_from_eups_version
 
 
 class EupsTag(object):
-    def __init__(self, name: str, date: Optional[datetime], product_list: Iterable[str]):
+    def __init__(
+        self,
+        name: str,
+        candidate_date: datetime,
+        product_list: Iterable[Tuple[str, str]],
+    ):
         self.name = name
-        self.date = date
-        self.products = product_list
-        if "afw" in self.products:
+        self.products = [product[0] for product in product_list]
+
+        # IF we can infer a release date based on the tag name, then use that.
+        # Otherwise, use the candidate date supplied (e.g. from HTTP).
+        self.date = infer_release_date(self.name) or candidate_date
+
+        for (product_name, product_version) in product_list:
+            if self.name == "master":
+                continue
+            from .products import products
+
             try:
-                self.date = products['afw'].tag_date(self.git_name)
-            except:
-                pass
+                product = products[product_name]
+            except KeyError as e:
+                logging.warning(f"Repository for {product_name} not available: {e}")
+            else:
+                if self.name not in product.tags:
+                    try:
+                        # If we know the correct version, tag it directly...
+                        product.add_tag(
+                            self.name, git_ref_from_eups_version(product_version)
+                        )
+                    except CalledProcessError:
+                        # ...otherwise, add a tag based on date.
+                        date_sha = products[product_name].sha_for_date(self.date)
+                        product.add_tag(self.name, date_sha)
 
     def __lt__(self, other):
+        logging.info(f"{self.name}, {self.date}")
+        logging.info(f"{other.name}, {self.date}")
         return self.date < other.date
-
-    @property
-    def git_name(self):
-        # If it's *not* an RC, we need to strip the leading "v"
-        # ... except in some early releases, but let's froget about them.
-        name = self.name.lstrip('v') if not "rc" in self.name else self.name
-        return name.replace("_", ".")
 
 
 class Eups(Mapping):
@@ -51,7 +70,9 @@ class Eups(Mapping):
         return [
             el.text[:-5]
             for el in h.findall("./body/table/tr/td/a")
-            if el.text[-5:] == ".list" and re.match(self._pattern, el.text) and not el.text[:-5] in TAG_SKIPLIST
+            if el.text[-5:] == ".list"
+            and re.match(self._pattern, el.text)
+            and not el.text[:-5] in TAG_SKIPLIST
         ]
 
     def __retrieve_tag(self, tag_name: str) -> EupsTag:
@@ -67,7 +88,9 @@ class Eups(Mapping):
             if line.strip()[0] == "#":
                 continue
             else:
-                products.append(line.split()[0])
+                product_name, _, product_version = line.split()
+                if product_name not in PRODUCT_SKIPLIST:
+                    products.append((product_name, product_version))
         return EupsTag(tag_name, tag_date, products)
 
     def __getitem__(self, tag_name: str) -> EupsTag:
@@ -80,7 +103,7 @@ class Eups(Mapping):
         return len(self._tags)
 
     @property
-    def all_products(self) -> List[str]:
+    def all_products(self) -> Set[str]:
         products = set()
         for tag in self.values():
             products.update(tag.products)
