@@ -44,8 +44,14 @@ class EupsTag(object):
                         product.add_tag(
                             self.name, git_ref_from_eups_version(product_version)
                         )
-                    except CalledProcessError:
+                    except CalledProcessError as e:
                         # ...otherwise, add a tag based on date.
+                        logging.warning(
+                            f"Failed to tag {product_name} with version "
+                            f"{git_ref_from_eups_version(product_version)}: "
+                            f"Git said: \"{e.output.decode('utf-8').strip()}\" "
+                            f"Falling back to timestamp."
+                        )
                         date_sha = products[product_name].sha_for_date(self.date)
                         product.add_tag(self.name, date_sha)
 

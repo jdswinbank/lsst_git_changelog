@@ -12,7 +12,8 @@ def call_git(*args: str, cwd: str, git_exec: str = "/usr/bin/git") -> str:
 
     logging.debug(to_exec)
     logging.debug(cwd)
-    return subprocess.check_output(to_exec, cwd=cwd).decode("utf-8")
+    return subprocess.check_output(to_exec, cwd=cwd,
+                                   stderr=subprocess.STDOUT).decode("utf-8")
 
 
 class Repository(object):

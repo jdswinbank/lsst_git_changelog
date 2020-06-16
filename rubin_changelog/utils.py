@@ -1,6 +1,5 @@
-import re
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from .config import RELEASE_DATES
 
 def tag_key(tagname: str) -> int:
@@ -30,11 +29,4 @@ def git_ref_from_eups_version(version: str) -> str:
     """Given a version string from the EUPS tag file, find something that
     looks like a Git ref.
     """
-    match = re.match(r"(?P<tag>[a-z0-9._]+)(-\d+)?(-g(?P<sha>[a-z0-9]+))?(\+\d+)?", version)
-    if match:
-        if match.group('sha'):
-            return match.group('sha')
-        else:
-            return match.group('tag')
-    else:
-        raise RuntimeError(f"Couldn't derive Git ref for {version}")
+    return version.split("+")[0]
