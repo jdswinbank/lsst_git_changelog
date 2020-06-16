@@ -16,20 +16,20 @@ def print_tag(
     if added:
         print("<h3>Products added</h3>")
         print("<ul>")
-        for product_name in added:
+        for product_name in sorted(added):
             print(f"<li>{product_name}</li>")
         print("</ul>")
     if dropped:
         print("<h3>Products removed</h3>")
         print("<ul>")
-        for product_name in dropped:
+        for product_name in sorted(dropped):
             print(f"<li>{product_name}</li>")
         print("</ul>")
     if tickets:
         jira = JiraCache()
         print("<h3>Tickets merged</h3>")
         print("<ul>")
-        for ticket_id, product_names in tickets.items():
+        for ticket_id, product_names in sorted(tickets.items(), key=lambda item: int(item[0][3:])):
             print(
                 f"<li><a href=https://jira.lsstcorp.org/browse/"
                 f"{ticket_id}>{ticket_id}</a>: {jira[ticket_id]} [{', '.join(product_names)}]</li>"
@@ -51,4 +51,4 @@ def print_changelog(changelog: Changelog, product_names: Set[str]):
         f"<p>Generated at {gen_date} by considering {', '.join(sorted(product_names))}.</p>"
     )
     print("</body>")
-    print("<html>")
+    print("</html>")
