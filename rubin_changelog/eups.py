@@ -7,7 +7,7 @@ from datetime import datetime
 from subprocess import CalledProcessError
 from urllib.request import urlopen
 
-from typing import Any, Iterable, Iterator, List, Tuple, Set, Optional
+from typing import Any, Iterable, Iterator, List, Tuple, Set
 
 from lxml import html  # type: ignore
 

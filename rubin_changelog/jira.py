@@ -1,7 +1,6 @@
 import dbm
 import json
 import logging
-import os
 
 from urllib.request import urlopen
 from urllib.error import HTTPError
