@@ -1,175 +1,80 @@
-from __future__ import print_function
+import argparse
+import logging
+
 from collections import defaultdict
-import datetime
-import glob
-import json
-import os
-import re
-import subprocess
-from urllib2 import urlopen, HTTPError
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
+from typing import Set
 
-try:
-    # Python 2
-    import anydbm as dbm
-except ModuleNotFoundError:
-    # Python 3
-    import dbm
-
-DEBUG = False
-GIT_EXEC = "/usr/bin/git"
-GIT_LFS_EXEC = "/software/lsstsw/stack/python/current/envs/lsst-scipipe/bin/git-lfs"
-JIRA_API_URL = "https://jira.lsstcorp.org/rest/api/2"
-
-# Populated by looking at https://sw.lsstcorp.org/eupspkg/tags/w_2017_8.list,
-# excluding ndarray and fftw since they don't appear to be receiving regular
-# weekly tags (for reasons known, presumably, to SQuaRE).
-REPOSITORIES = glob.glob("/ssd/swinbank/src/*")
-
-class Repository(object):
-    def __init__(self, path):
-        self.path = path
-
-    def __call_git(self, *args):
-        to_exec = [GIT_EXEC] + list(args)
-
-        # Make sure that git-lfs exists on the PATH.
-        # (It doesn't by default on lsst-dev01)
-        env = os.environ.copy()
-        env['PATH'] = "%s:%s" % (os.path.dirname(GIT_LFS_EXEC), env["PATH"])
-
-        if DEBUG:
-            print(to_exec)
-            print(env['PATH'])
-        return subprocess.check_output(to_exec, cwd=self.path, env=env)
-
-    def commits(self, reachable_from=None, merges_only=False):
-        args = ["log", "--pretty=format:%H"]
-        if reachable_from:
-            args.append(reachable_from)
-        if merges_only:
-            args.append("--merges")
-        return self.__call_git(*args).split()
-
-    def message(self, commit_hash):
-        return self.__call_git("show", commit_hash, "--pretty=format:%s")
-
-    def tags(self, pattern=r".*"):
-        return [tag for tag in self.__call_git("tag").split()
-                if re.search(pattern, tag)]
-
-    def update(self):
-        return self.__call_git("pull")
-
-    def branch_name(self):
-        branches = [br.strip("* ") for br in
-                    self.__call_git("branch").split('\n')
-                    if br]
-        if "lsst-dev" in branches:
-            return "lsst-dev"
-        else:
-            return "master"
-
-    @staticmethod
-    def ticket(message):
-        try:
-            return re.search(r"(DM-\d+)", message, re.IGNORECASE).group(1)
-        except AttributeError:
-            if DEBUG:
-                print(message)
+from rubin_changelog.eups import Eups, EupsTag
+from rubin_changelog.output import print_changelog
+from rubin_changelog.products import products
+from rubin_changelog.typing import Changelog
 
 
-def get_ticket_summary(ticket):
-    dbname = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                          "ticket.cache")
-    # Context manager in Py3, but not 2, apparently
-    db = dbm.open(dbname, "c")
+def get_merges_for_product(
+    product_name: str, old_tag_name: str, new_tag_name: str
+) -> Set[str]:
+    merged = set()
     try:
-        if ticket not in db:
-            url = JIRA_API_URL + "/issue/" + ticket + "?fields=summary"
-            if DEBUG:
-                print(url)
-            db[ticket] = json.load(urlopen(url))['fields']['summary'].encode("utf-8")
-        # json gives us a unicode string, which we need to encode for storing
-        # in the database, then decode again when we load it.
-        return db[ticket].decode("utf-8")
-    except HTTPError:
-            return ("Ticket description not available")
-    finally:
-        db.close()
+        product = products[product_name]
+    except KeyError:
+        logging.debug(f"Skipping ticket list on {product_name} (probably skiplisted)")
+    else:
+        old_ref_name = f"refs/tags/{old_tag_name}"
+        new_ref_name = (
+            f"refs/tags/{new_tag_name}"
+            if new_tag_name != "master"
+            else product.branch_name
+        )
+        merges = product.merges_between(old_ref_name, new_ref_name)
+        for sha in merges:
+            ticket = product.ticket(product.message(sha))
+            if ticket:
+                merged.add(ticket)
+    return merged
 
-def tag_key(tagname):
-    """
-    Convert a tagname ("w.YYYY.NN" or "w.YYYY.N") into a key for sorting.
 
-    "w.2017.1"  -> 201701
-    "w.2017.01" -> 201701
-    "w.2017.10" -> 201710
-    etc.
-    """
-    return int(tagname.split(".")[1]) * 100 + int(tagname.split(".")[2])
+def generate_changelog(eups: Eups) -> Changelog:
+    tags = sorted(eups.values(), reverse=True)
+    tags.insert(
+        0,
+        EupsTag("master", datetime(1, 1, 1), [(p, "dummy") for p in tags[0].products]),
+    )
+    changelog: Changelog = {}
+    for new_tag, old_tag in zip(tags, tags[1:]):
+        added = set(new_tag.products) - set(old_tag.products)
+        dropped = set(old_tag.products) - set(new_tag.products)
+        tickets = defaultdict(set)
 
-def print_tag(tagname, tickets):
-    print("<h2>New in {}</h2>".format(tagname))
-    print("<ul>")
-    for ticket in sorted(tickets, key=lambda x: int(x[3:])):  # Numeric sort
-        summary = get_ticket_summary(ticket)
-        pkgs = ", ".join(sorted(tickets[ticket]))
-        link_text = (u"<li><a href=https://jira.lsstcorp.org/browse/"
-                     u"{ticket}>{ticket}</a>: {summary} [{pkgs}]</li>")
-        print(link_text.format(ticket=ticket.upper(), summary=summary, pkgs=pkgs)
-                       .encode("utf-8"))
-    print("</ul>")
+        with ThreadPoolExecutor() as executor:
+            future_to_merges = {
+                executor.submit(
+                    get_merges_for_product, product_name, old_tag.name, new_tag.name
+                ): product_name
+                for product_name in set(new_tag.products) & set(old_tag.products)
+            }
+            for future in as_completed(future_to_merges):
+                product_name = future_to_merges[future]
+                for merge in future.result():
+                    tickets[merge].add(product_name)
 
-def format_output(changelog, repositories):
-    # Ew, needs a proper templating engine
-    print("<html>")
-    print("<head><title>LSST DM Weekly Changelog</title></head>")
-    print("<body>")
-    print("<h1>LSST DM Weekly Changelog</h1>")
-
-    # Always do master first if it exists
-    # (It won't if there are no changes since the most recent weekly)
-    if "master" in changelog:
-        print_tag("master", changelog.pop("master", None))
-
-    # Then the other tags in order
-    for tag in sorted(changelog, reverse=True, key=tag_key):
-        print_tag(tag, changelog[tag])
-
-    gen_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M +00:00")
-    repos = ", ".join(os.path.basename(r) for r in sorted(repositories))
-    print("<p>Generated at {} by considering {}.</p>".format(gen_date, repos))
-    print("</body>")
-    print("</html>")
-
-def generate_changelog(repositories):
-    # Dict of tag -> ticket -> affected packages
-    changelog =  defaultdict(lambda: defaultdict(set))
-    for repository in repositories:
-        if DEBUG:
-            print(repository)
-        r = Repository(repository)
-        r.update()
-
-        # Extract all tags which look like weeklies
-        tags = sorted(r.tags("^w\.\d{4}\.\d?\d$"), reverse=True, key=tag_key)
-        # Also include tickets which aren't yet in a weekly
-        tags.insert(0, r.branch_name())
-
-        for newtag, oldtag in zip(tags, tags[1:]):
-            merges = (set(r.commits(newtag, merges_only=True)) -
-                      set(r.commits(oldtag, merges_only=True)))
-
-            for sha in merges:
-                ticket = r.ticket(r.message(sha))
-                if ticket:
-                    if newtag == r.branch_name():
-                        changelog["master"][ticket].add(os.path.basename(repository))
-                    else:
-                        changelog[newtag][ticket].add(os.path.basename(repository))
+        changelog[new_tag] = {"added": added, "dropped": dropped, "tickets": tickets}
     return changelog
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--weekly', action='store_const', const=r"w_20", dest='tag_prefix')
+    group.add_argument('--release', action='store_const', const=r"v\d\d", dest='tag_prefix')
+    group.add_argument('--tag-prefix')
+    parser.add_argument('--debug', action='store_true')
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    changelog = generate_changelog(REPOSITORIES)
-    format_output(changelog, REPOSITORIES)
+    args = parse_args()
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    eups = Eups(pattern=args.tag_prefix)
+    print_changelog(generate_changelog(eups), eups.all_products)
