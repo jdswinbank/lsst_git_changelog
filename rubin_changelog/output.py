@@ -32,7 +32,7 @@ def print_tag(
         for ticket_id, product_names in sorted(tickets.items(), key=lambda item: int(item[0][3:])):
             print(
                 f"<li><a href=https://jira.lsstcorp.org/browse/"
-                f"{ticket_id}>{ticket_id}</a>: {jira[ticket_id]} [{', '.join(product_names)}]</li>"
+                f"{ticket_id}>{ticket_id}</a>: {jira[ticket_id]} [{', '.join(sorted(product_names))}]</li>"
             )
         print("</ul>")
 
