@@ -2,8 +2,10 @@ name: Generate changelog
 
 on:
     push:
+        branches:
+            - master
     schedule:
-        - cron:  '*/30 * * * *'
+        - cron: '*/30 * * * *'
 
 jobs:
     generate:
