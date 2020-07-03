@@ -1,0 +1,46 @@
+name: Test changelog generation
+
+on:
+    push:
+        branches-ignore:
+            - master
+    pull_request:
+        branches-ignore:
+            - master
+
+jobs:
+    generate-test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-python@v2
+              with:
+                python-version: 3.8
+            - name: Get Date
+              id: get-date
+              run: |
+                echo "::set-output name=date::$(/bin/date -u "+%s")"
+              shell: bash
+            - uses: actions/cache@v2
+              with:
+                path: ~/repos
+                key: init-2020-06-16-repos-${{ steps.get-date.outputs.date }}
+                restore-keys: init-2020-06-16-repos-
+            - name: Install dependencies
+              run: |
+                python -m pip install --upgrade pip
+                pip install pyyaml lxml
+            - name: Create weekly changelog
+              run: |
+                mkdir -p output/weekly
+                python git_changelog.py --weekly > output/weekly/index.html
+            - name: Create release changelog
+              run: |
+                mkdir -p output/release
+                python git_changelog.py --release > output/release/index.html
+            - name: Deploy to Netlify
+              uses: JamesIves/github-pages-deploy-action@releases/v3
+              with:
+                ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+                BRANCH: deploy-test
+                FOLDER: output
