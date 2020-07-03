@@ -3,7 +3,7 @@ import json
 import logging
 
 from urllib.request import urlopen
-from urllib.error import HTTPError
+from urllib.error import URLError
 
 from rubin_changelog.config import JIRA_API_URL, TICKET_CACHE
 
@@ -27,6 +27,6 @@ class JiraCache(object):
                     db[ticket] = json.load(urlopen(url))["fields"]["summary"].encode(
                         "utf-8"
                     )
-                except HTTPError:
+                except URLError:
                     return "Ticket description not available"
             return db[ticket].decode("utf-8")
