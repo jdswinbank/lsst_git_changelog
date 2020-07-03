@@ -1,14 +1,15 @@
-name: Generate changelog
+name: Test changelog generation
 
 on:
     push:
-        branches:
+        branches-ignore:
             - master
-    schedule:
-        - cron: '*/30 * * * *'
+    pull_request:
+        branches-ignore:
+            - master
 
 jobs:
-    generate:
+    generate-test:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v2
@@ -33,13 +34,17 @@ jobs:
               run: |
                 mkdir -p output/weekly
                 python git_changelog.py --weekly > output/weekly/index.html
+            - name: Upload weekly changelog as artifact
+              uses: actions/upload-artifact@v2
+              with:
+                  name: weekly-changelog
+                  path: output/weekly/index.html
             - name: Create release changelog
               run: |
                 mkdir -p output/release
                 python git_changelog.py --release > output/release/index.html
-            - name: Deploy to Netlify
-              uses: JamesIves/github-pages-deploy-action@releases/v3
+            - name: Upload release changelog as artifact
+              uses: actions/upload-artifact@v2
               with:
-                ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-                BRANCH: deploy
-                FOLDER: output
+                  name: release-changelog
+                  path: output/release/index.html
