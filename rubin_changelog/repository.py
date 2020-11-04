@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import shutil
 import subprocess
 from datetime import datetime
 
@@ -12,8 +13,9 @@ def call_git(*args: str, cwd: str, git_exec: str = "/usr/bin/git") -> str:
 
     logging.debug(to_exec)
     logging.debug(cwd)
-    return subprocess.check_output(to_exec, cwd=cwd,
-                                   stderr=subprocess.STDOUT).decode("utf-8")
+    return subprocess.check_output(to_exec, cwd=cwd, stderr=subprocess.STDOUT).decode(
+        "utf-8"
+    )
 
 
 class Repository(object):
@@ -88,10 +90,16 @@ class Repository(object):
     def materialize(
         cls, url: str, target_dir: str, *, branch_name: str = "master"
     ) -> "Repository":
-        os.makedirs(target_dir, exist_ok=True)
+        # Try to re-use an on disk repository. However, if it's corrupted,
+        # blow it away and clone a fresh copy.
         repo_dir_name = re.sub(r".git$", "", url.split("/")[-1])
         clone_path = os.path.join(target_dir, repo_dir_name)
-        if not os.path.exists(clone_path):
+        os.makedirs(target_dir, exist_ok=True)
+
+        def clone() -> None:
+            """Clone repo at url into a subdirectory target_dir, clobbering
+            pre-existing content, returning the resulting path.
+            """
             call_git(
                 "clone",
                 "--bare",
@@ -101,6 +109,16 @@ class Repository(object):
                 repo_dir_name,
                 cwd=target_dir,
             )
+
+        if not os.path.exists(clone_path):
+            clone()
         repo = cls(clone_path, branch_name=branch_name)
-        repo.update()
+        try:
+            repo.update()
+        except subprocess.CalledProcessError as e:
+            logging.warn(f"Unable to update {clone_path}: {e}; {e.output}; resetting")
+            shutil.rmtree(clone_path)
+            clone()
+            repo = cls(clone_path, branch_name=branch_name)
+            repo.update()
         return repo
