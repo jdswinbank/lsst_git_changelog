@@ -48,17 +48,3 @@ jobs:
               with:
                   name: release-changelog
                   path: output/release/index.html
-            - name: Add static content to output
-              run: |
-                mkdir -p output
-                cp -r static/* output
-            - name: Deploy to GitHub Pages
-              if: success()
-              uses: crazy-max/ghaction-github-pages@v2
-              with:
-                target_branch: gh-pages
-                build_dir: output
-                fqdn: rubin-changelog-test.swinbank.org
-                jekyll: false
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

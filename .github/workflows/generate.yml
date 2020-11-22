@@ -41,10 +41,13 @@ jobs:
               run: |
                 mkdir -p output/release
                 python git_changelog.py --release > output/release/index.html
-            - name: Deploy to Netlify
-              uses: JamesIves/github-pages-deploy-action@releases/v3
+            - name: Deploy to GitHub Pages
+              if: success()
+              uses: crazy-max/ghaction-github-pages@v2
               with:
-                ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-                BRANCH: deploy
-                FOLDER: output
-                SINGLE_COMMIT: true
+                target_branch: gh-pages
+                build_dir: output
+                fqdn: rubin-pipelines-changelog.swinbank.org
+                jekyll: false
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
