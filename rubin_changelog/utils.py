@@ -18,9 +18,9 @@ def infer_release_date(tagname: str) -> Optional[datetime]:
     """
     if tagname in RELEASE_DATES:
         return RELEASE_DATES[tagname]
-    elif tagname[0] == "w":
-        # Must be a weekly!
-        # Assume weeklies are released on Saturday (day number 6).
+    elif tagname[0] == "w" and tagname < "w_2020_43":
+        # Weeklies used to be reliably produced on Saturdays, but that changed
+        # in October of 2020.
         return datetime.strptime(tagname + "_6", "w_%G_%V_%u")
     else:
         return None
