@@ -50,5 +50,6 @@ def print_changelog(changelog: Changelog, product_names: Set[str]):
     print(
         f"<p>Generated at {gen_date} by considering {', '.join(sorted(product_names))}.</p>"
     )
+    print("<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{\"token\": \"2a18a020026f462d8839232c1cc61256\"}'></script><!-- End Cloudflare Web Analytics -->")
     print("</body>")
     print("</html>")
